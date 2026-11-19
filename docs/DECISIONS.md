@@ -8,3 +8,5 @@
 - 2026-11-19: Drift is used for recent files and resume data, while
   shared_preferences stores lightweight settings.
 - 2026-11-19: English and Italian are shipped as the initial locales.
+- 2026-11-19: All libmpv property, command, and observation access is exposed
+  through `MpvBackend`; the UI has no direct `NativePlayer` dependency.

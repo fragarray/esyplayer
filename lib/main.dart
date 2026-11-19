@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 
+import 'features/player/player_screen.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
@@ -30,7 +32,7 @@ class EsyPlayerApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
-      home: const Scaffold(body: Center(child: Text('EsyPlayer'))),
+      home: const PlayerScreen(),
     );
   }
 }

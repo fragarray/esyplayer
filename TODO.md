@@ -11,10 +11,10 @@
 
 ## Milestone 2 - Player backend
 
-- [ ] Implement PlayerBackend abstraction
-- [ ] Implement MpvBackend with NativePlayer property/command access
-- [ ] Implement FakeBackend
-- [ ] Add basic playback UI
+- [x] Implement PlayerBackend abstraction
+- [x] Implement MpvBackend with NativePlayer property/command access
+- [x] Implement FakeBackend
+- [x] Add basic playback UI
 
 ## Milestone 3 - Controls
 
