@@ -14,6 +14,9 @@ abstract interface class PlayerBackend {
   Future<void> pause();
   Future<void> playOrPause();
   Future<void> stop();
+  Future<void> addToPlaylist(String source);
+  Future<void> next();
+  Future<void> previous();
   Future<void> seek(Duration position);
   Future<void> setVolume(double volume);
   Future<void> setMuted(bool muted);
@@ -24,5 +27,15 @@ abstract interface class PlayerBackend {
     String name,
     Future<void> Function(String value) listener,
   );
+  Future<void> setSubtitleTrack(String id);
+  Future<void> setSecondarySubtitleTrack(String id);
+  Future<void> loadSubtitle(String path);
+  Future<void> setSubtitleDelay(Duration delay);
+  Future<void> setSubtitleSize(int percent);
+  Future<void> setAudioTrack(String id);
+  Future<void> setAudioDelay(Duration delay);
+  Future<void> setRate(double rate);
+  Future<void> setABLoop(bool enabled);
+  Future<void> setPropertyPreset(String name);
   Future<void> dispose();
 }

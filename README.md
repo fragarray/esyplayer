@@ -38,3 +38,36 @@ depend on the host mpv build or desktop environment.
 
 Screenshots are not available yet. The first screenshot will be added when the
 stable player layout is complete.
+
+## Packaging
+
+### Linux
+
+```sh
+flutter build linux
+```
+
+The release bundle is in `build/linux/x64/release/bundle`. Package that bundle
+with an AppImage or Debian packaging tool. Debian package dependencies include
+`mpv` and `libmpv-dev` at build time.
+
+### Windows
+
+```sh
+flutter build windows
+```
+
+The release bundle is in `build/windows/x64/runner/Release`. The bundle can be
+distributed as an installer-created package or ZIP archive. A Windows installer
+can place EsyPlayer in Program Files and register file associations.
+
+## Known limitations
+
+- Some mpv features depend on the mpv/libmpv build shipped with the operating
+  system or bundled by the media_kit native libraries.
+- Hardware decoding choices are passed to mpv and may vary by GPU and driver.
+- OpenSubtitles integration is not enabled by default and requires an API
+  implementation and account credentials supplied by the user.
+- Playlist M3U/PLS support and advanced features are progressively exposed;
+  the advanced mpv property/command menu provides direct access where a dedicated
+  control is not yet present.

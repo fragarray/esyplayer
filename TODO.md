@@ -27,51 +27,51 @@
 
 ## Milestone 4 - Library
 
-- [ ] Playlist queue and reordering
-- [ ] Shuffle and repeat modes
-- [ ] M3U/PLS save and load
-- [ ] Recent files
-- [ ] Resume position
+- [x] Playlist queue and reordering
+- [x] Shuffle and repeat modes
+- [x] M3U/PLS save and load
+- [x] Recent files
+- [x] Resume position
 
 ## Milestone 5 - Tracks
 
-- [ ] Subtitle track selection and secondary subtitle
-- [ ] External subtitles, delay and encoding
-- [ ] Subtitle styling
-- [ ] Audio track selection and delay
+- [x] Subtitle track selection and secondary subtitle
+- [x] External subtitles, delay and encoding
+- [x] Subtitle styling
+- [x] Audio track selection and delay
 - [ ] Optional OpenSubtitles integration behind settings
 
 ## Milestone 6 - Video and advanced playback
 
-- [ ] Aspect ratio, crop, rotation and flip
-- [ ] Zoom/pan and picture adjustments
-- [ ] Deinterlace and hardware decoder selection
-- [ ] Shaders and screenshots
-- [ ] Equalizer and audio normalization
-- [ ] A-B loop and chapters
+- [x] Aspect ratio, crop, rotation and flip
+- [x] Zoom/pan and picture adjustments
+- [x] Deinterlace and hardware decoder selection
+- [x] Shaders and screenshots
+- [x] Equalizer and audio normalization
+- [x] A-B loop and chapters
 
 ## Milestone 7 - Preferences
 
-- [ ] Extra mpv options
-- [ ] mpv profiles and config loading
+- [x] Extra mpv options
+- [x] mpv profiles and config loading
 - [ ] Shortcut editor
-- [ ] Dark/light themes
-- [ ] English and Italian localization
+- [x] Dark/light themes
+- [x] English and Italian localization
 
 ## Milestone 8 - Diagnostics and polish
 
-- [ ] Stats overlay
-- [ ] Media info dialog
-- [ ] Raw mpv command palette
+- [x] Stats overlay
+- [x] Media info dialog
+- [x] Raw mpv command palette
 - [ ] Logs viewer
-- [ ] About dialog and error handling
+- [x] About dialog and error handling
 
 ## Milestone 9 - Validation
 
-- [ ] Unit tests
-- [ ] Widget tests
-- [ ] Complete README install/build instructions
-- [ ] Add packaging notes
-- [ ] Write docs/STATUS.md
+- [x] Unit tests
+- [x] Widget tests
+- [x] Complete README install/build instructions
+- [x] Add packaging notes
+- [x] Write docs/STATUS.md
 
 ## Blocked

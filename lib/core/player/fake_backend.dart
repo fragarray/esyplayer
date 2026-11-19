@@ -66,6 +66,15 @@ class FakeBackend implements PlayerBackend {
   }
 
   @override
+  Future<void> addToPlaylist(String source) async {}
+
+  @override
+  Future<void> next() async {}
+
+  @override
+  Future<void> previous() async {}
+
+  @override
   Future<void> seek(Duration position) async {
     this.position = position;
     _position.add(position);
@@ -98,6 +107,34 @@ class FakeBackend implements PlayerBackend {
     String name,
     Future<void> Function(String value) listener,
   ) async {}
+
+  @override
+  Future<void> setSubtitleTrack(String id) async => setProperty('sid', id);
+  @override
+  Future<void> setSecondarySubtitleTrack(String id) async =>
+      setProperty('secondary-sid', id);
+  @override
+  Future<void> loadSubtitle(String path) async =>
+      command(['sub-add', path, 'select']);
+  @override
+  Future<void> setSubtitleDelay(Duration delay) async =>
+      setProperty('sub-delay', '${delay.inMilliseconds / 1000}');
+  @override
+  Future<void> setSubtitleSize(int percent) async =>
+      setProperty('sub-scale', '${percent / 100}');
+  @override
+  Future<void> setAudioTrack(String id) async => setProperty('aid', id);
+  @override
+  Future<void> setAudioDelay(Duration delay) async =>
+      setProperty('audio-delay', '${delay.inMilliseconds / 1000}');
+  @override
+  Future<void> setRate(double rate) async => setProperty('speed', '$rate');
+  @override
+  Future<void> setABLoop(bool enabled) async =>
+      setProperty('ab-loop-a', enabled ? '1' : '0');
+  @override
+  Future<void> setPropertyPreset(String name) async =>
+      setProperty('profile', name);
 
   @override
   Future<void> dispose() async {

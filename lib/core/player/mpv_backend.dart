@@ -49,6 +49,15 @@ class MpvBackend implements PlayerBackend {
   Future<void> stop() => _player.stop();
 
   @override
+  Future<void> addToPlaylist(String source) => _player.add(Media(source));
+
+  @override
+  Future<void> next() => _player.next();
+
+  @override
+  Future<void> previous() => _player.previous();
+
+  @override
   Future<void> seek(Duration position) => _player.seek(position);
 
   @override
@@ -75,6 +84,48 @@ class MpvBackend implements PlayerBackend {
     String name,
     Future<void> Function(String value) listener,
   ) => _nativePlayer.observeProperty(name, listener);
+
+  @override
+  Future<void> setSubtitleTrack(String id) =>
+      _nativePlayer.setProperty('sid', id);
+
+  @override
+  Future<void> setSecondarySubtitleTrack(String id) =>
+      _nativePlayer.setProperty('secondary-sid', id);
+
+  @override
+  Future<void> loadSubtitle(String path) =>
+      _nativePlayer.command(['sub-add', path, 'select']);
+
+  @override
+  Future<void> setSubtitleDelay(Duration delay) => _nativePlayer.setProperty(
+    'sub-delay',
+    (delay.inMilliseconds / 1000).toString(),
+  );
+
+  @override
+  Future<void> setSubtitleSize(int percent) =>
+      _nativePlayer.setProperty('sub-scale', (percent / 100).toString());
+
+  @override
+  Future<void> setAudioTrack(String id) => _nativePlayer.setProperty('aid', id);
+
+  @override
+  Future<void> setAudioDelay(Duration delay) => _nativePlayer.setProperty(
+    'audio-delay',
+    (delay.inMilliseconds / 1000).toString(),
+  );
+
+  @override
+  Future<void> setRate(double rate) => _player.setRate(rate);
+
+  @override
+  Future<void> setABLoop(bool enabled) =>
+      _nativePlayer.setProperty('ab-loop-a', enabled ? '1' : '0');
+
+  @override
+  Future<void> setPropertyPreset(String name) =>
+      _nativePlayer.command(['apply-profile', name]);
 
   @override
   Future<void> dispose() => _player.dispose();
