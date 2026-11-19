@@ -17,18 +17,16 @@ class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
 
   Future<void> _openFile(PlayerController controller) async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: false,
-      type: FileType.media,
-    );
-    final path = result?.files.single.path;
+    final file = await FilePicker.pickFile(type: FileType.media);
+    final path = file?.path;
     if (path != null) {
       await controller.open(path);
     }
   }
 
   Future<void> _openFolder(PlayerController controller) async {
-    final path = await FilePicker.platform.getDirectoryPath();
+    final directory = await FilePicker.pickDirectory();
+    final path = directory?.toFilePath();
     if (path != null) {
       await controller.open(path);
     }
@@ -262,8 +260,7 @@ class PlayerScreen extends ConsumerWidget {
                           controller.setAudioTrack,
                         );
                       case 'load_sub':
-                        final result = await FilePicker.platform.pickFiles(
-                          allowMultiple: false,
+                        final file = await FilePicker.pickFile(
                           type: FileType.custom,
                           allowedExtensions: const [
                             'srt',
@@ -273,7 +270,7 @@ class PlayerScreen extends ConsumerWidget {
                             'sub',
                           ],
                         );
-                        final path = result?.files.single.path;
+                        final path = file?.path;
                         if (path != null) {
                           await controller.loadSubtitle(path);
                         }
@@ -459,24 +456,9 @@ class PlayerScreen extends ConsumerWidget {
               ],
             ),
             body: DropTarget(
-              onDrop: (details) {
-                for (final item in details.items) {
-                  if (item is DropFileItem) {
-                    final path = item.localPath ?? item.name;
-                    controller.open(path);
-                    return;
-                  }
-                  if (item is DropDirectoryItem) {
-                    final path = item.localPath;
-                    if (path != null) {
-                      controller.open(path);
-                    }
-                    return;
-                  }
-                  if (item is DropStringItem && item.value.trim().isNotEmpty) {
-                    controller.open(item.value.trim());
-                    return;
-                  }
+              onDragDone: (details) {
+                if (details.files.isNotEmpty) {
+                  controller.open(details.files.first.path);
                 }
               },
               child: Column(

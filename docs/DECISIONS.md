@@ -12,3 +12,5 @@
   through `MpvBackend`; the UI has no direct `NativePlayer` dependency.
 - 2026-11-19: Drift stores recent media, resume offsets, and playlist entries;
   shared_preferences remains reserved for lightweight preferences.
+- 2026-11-20: `file_picker` 13.x uses `cross_file` 0.3.x; keep `desktop_drop`
+  on 0.8.x because 0.9.x requires incompatible `cross_file` 0.4.x.
