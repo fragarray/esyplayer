@@ -17,6 +17,8 @@ flutter run -d windows
 flutter run -d linux
 ```
 
+Right-click the playback surface to open the grouped command and settings menus.
+
 ## Linux prerequisites
 
 ```sh

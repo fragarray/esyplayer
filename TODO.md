@@ -60,6 +60,7 @@
 
 ## Milestone 8 - Diagnostics and polish
 
+- [x] Add right-click command menu with grouped settings and no player logo
 - [x] Stats overlay
 - [x] Media info dialog
 - [x] Raw mpv command palette

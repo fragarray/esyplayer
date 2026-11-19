@@ -24,6 +24,23 @@ class AppSettings {
   Future<void> setDarkMode(bool value) =>
       preferences.setBool('dark_mode', value);
 
+  Future<List<String>> getFavorites() async =>
+      await preferences.getStringList('favorites') ?? [];
+
+  Future<void> addFavorite(String path) async {
+    final favorites = await getFavorites();
+    if (!favorites.contains(path)) {
+      favorites.add(path);
+      await preferences.setStringList('favorites', favorites);
+    }
+  }
+
+  Future<void> removeFavorite(String path) async {
+    final favorites = await getFavorites();
+    favorites.remove(path);
+    await preferences.setStringList('favorites', favorites);
+  }
+
   Future<String?> getOpenSubtitlesApiKey() =>
       preferences.getString('opensubtitles_api_key');
 

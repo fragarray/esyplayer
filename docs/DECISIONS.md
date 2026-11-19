@@ -14,3 +14,6 @@
   shared_preferences remains reserved for lightweight preferences.
 - 2026-11-20: `file_picker` 13.x uses `cross_file` 0.3.x; keep `desktop_drop`
   on 0.8.x because 0.9.x requires incompatible `cross_file` 0.4.x.
+- 2026-11-20: Player commands are organized in nested menus opened by
+  right-clicking the playback surface; settings are grouped by functional area.
+  The player surface remains free of branding and app-bar command clutter.
