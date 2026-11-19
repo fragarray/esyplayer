@@ -17,3 +17,8 @@
 - 2026-11-20: Player commands are organized in nested menus opened by
   right-clicking the playback surface; settings are grouped by functional area.
   The player surface remains free of branding and app-bar command clutter.
+- 2026-11-21: Subtitle styling is persisted through shared_preferences and
+  applied through PlayerBackend. Primary subtitles default to the bottom and
+  secondary subtitles to the top; per mpv's API, their font and color styling
+  is shared, while position, scale, delay, visibility, and ASS override can be
+  configured independently.

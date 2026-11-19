@@ -14,6 +14,8 @@
 - M3U load/save helpers
 - Subtitle and audio track ID controls
 - External subtitle loading
+- Persistent subtitle font, size, color, outline, margins, alignment, encoding,
+  delay, and primary/secondary positioning preferences
 - A-B loop property control
 - Raw mpv property dialog and command actions
 - Screenshot and frame-step commands
@@ -31,6 +33,8 @@
   API contract are supplied.
 - A shortcut editor and log viewer remain planned.
 - PLS and M3U parsing is intentionally conservative and M3U metadata is ignored.
+- mpv does not expose independent font, color, or border styling for secondary
+  subtitles; these share the primary style.
 
 ## Run
 

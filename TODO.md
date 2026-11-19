@@ -38,6 +38,7 @@
 - [x] Subtitle track selection and secondary subtitle
 - [x] External subtitles, delay and encoding
 - [x] Subtitle styling
+- [x] Persist subtitle styling and separate primary/secondary positioning
 - [x] Audio track selection and delay
 - [ ] Optional OpenSubtitles integration behind settings
 

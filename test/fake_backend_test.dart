@@ -3,6 +3,16 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:esyplayer/core/player/fake_backend.dart';
+import 'package:esyplayer/core/settings/settings.dart';
+import 'package:esyplayer/features/player/player_controller.dart';
+
+class _MemorySettings implements SubtitlePreferencesStore {
+  @override
+  Future<Map<String, String>> getSubtitlePreferences() async => {
+    ...AppSettings.subtitlePreferenceDefaults,
+    'sub-font': 'Test Font',
+  };
+}
 
 void main() {
   test('fake backend exposes basic playback operations', () async {
@@ -20,4 +30,19 @@ void main() {
 
     await backend.dispose();
   });
+
+  test(
+    'controller applies persisted subtitle settings when opening media',
+    () async {
+      final backend = FakeBackend();
+      final controller = PlayerController(backend, settings: _MemorySettings());
+
+      await controller.open('test://media');
+
+      expect(backend.properties['sub-pos'], '100');
+      expect(backend.properties['secondary-sub-pos'], '0');
+      expect(backend.properties['sub-font'], 'Test Font');
+      controller.dispose();
+    },
+  );
 }

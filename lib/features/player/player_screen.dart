@@ -15,6 +15,7 @@ import 'package:window_manager/window_manager.dart';
 import 'player_controller.dart';
 import 'player_providers.dart';
 import '../../core/settings/settings_providers.dart';
+import '../subtitles/subtitle_preferences_dialog.dart';
 
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key, this.enableDropTarget = true});
@@ -341,6 +342,32 @@ class PlayerScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _subtitlePreferencesDialog(
+    BuildContext context,
+    WidgetRef ref,
+    PlayerController controller,
+  ) async {
+    final settings = ref.read(appSettingsProvider);
+    final currentValues = await settings.getSubtitlePreferences();
+    if (!context.mounted) {
+      return;
+    }
+
+    final values = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) =>
+          SubtitlePreferencesDialog(initialValues: currentValues),
+    );
+    if (values == null) {
+      return;
+    }
+
+    for (final entry in values.entries) {
+      await controller.setProperty(entry.key, entry.value);
+    }
+    await settings.setSubtitlePreferences(values);
+  }
+
   List<Widget> _contextMenu(
     BuildContext context,
     WidgetRef ref,
@@ -473,7 +500,10 @@ class PlayerScreen extends ConsumerWidget {
           for (final size in [75, 100, 125, 150, 200])
             item('$size%', () => controller.setSubtitleSize(size)),
         ]),
-        item('Ritardo e stile…', () => _propertyDialog(context, controller)),
+        item(
+          'Preferenze sottotitoli…',
+          () => _subtitlePreferencesDialog(context, ref, controller),
+        ),
       ]),
       submenu('Preferiti', [
         item(
@@ -587,8 +617,8 @@ class PlayerScreen extends ConsumerWidget {
         ]),
         submenu('Sottotitoli', [
           item(
-            'Ritardo, dimensione e stile…',
-            () => _propertyDialog(context, controller),
+            'Preferenze sottotitoli…',
+            () => _subtitlePreferencesDialog(context, ref, controller),
           ),
         ]),
       ]),

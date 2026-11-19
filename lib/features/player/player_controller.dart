@@ -5,10 +5,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/player/player_backend.dart';
+import '../../core/settings/settings.dart';
 import '../../core/storage/app_database.dart';
 
 class PlayerController extends ChangeNotifier {
-  PlayerController(this.backend, {this.database}) {
+  PlayerController(this.backend, {this.database, this.settings}) {
     _subscriptions.addAll([
       backend.positionStream.listen((value) {
         position = value;
@@ -31,6 +32,7 @@ class PlayerController extends ChangeNotifier {
 
   final PlayerBackend backend;
   final AppDatabase? database;
+  final SubtitlePreferencesStore? settings;
   String? currentSource;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
@@ -43,7 +45,13 @@ class PlayerController extends ChangeNotifier {
   Future<void> open(String source) async {
     currentSource = source;
     await database?.addRecentFile(source);
+    final subtitlePreferences =
+        await settings?.getSubtitlePreferences() ??
+        AppSettings.subtitlePreferenceDefaults;
     await backend.open(source);
+    for (final entry in subtitlePreferences.entries) {
+      await backend.setProperty(entry.key, entry.value);
+    }
     final resume = await database?.resumePosition(source);
     if (resume != null && resume > Duration.zero) {
       await backend.seek(resume);

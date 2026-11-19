@@ -68,6 +68,10 @@ can place EsyPlayer in Program Files and register file associations.
 - Some mpv features depend on the mpv/libmpv build shipped with the operating
   system or bundled by the media_kit native libraries.
 - Hardware decoding choices are passed to mpv and may vary by GPU and driver.
+- Subtitle appearance and encoding options are persisted. mpv does not expose
+  independent fonts, colors, or borders for secondary subtitles; the secondary
+  track shares the primary style, but supports separate position, scale, delay,
+  visibility, and ASS override.
 - OpenSubtitles integration is not enabled by default and requires an API
   implementation and account credentials supplied by the user.
 - Playlist M3U/PLS support and advanced features are progressively exposed;
