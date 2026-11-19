@@ -32,6 +32,9 @@ class MpvBackend implements PlayerBackend {
   Stream<double> get volumeStream => _player.stream.volume;
 
   @override
+  Stream<Tracks> get tracksStream => _player.stream.tracks;
+
+  @override
   Future<void> open(String source) async {
     await _player.open(Media(source));
   }

@@ -12,7 +12,7 @@
 - Keyboard play/pause and seek shortcuts
 - Drift storage for recent files, resume positions, and named playlists
 - M3U load/save helpers
-- Subtitle and audio track ID controls
+- Nested audio and primary/secondary subtitle menus list available media tracks
 - External subtitle loading
 - Persistent subtitle font, size, color, outline, margins, alignment, encoding,
   delay, and primary/secondary positioning preferences

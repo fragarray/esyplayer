@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:media_kit/media_kit.dart' show Tracks;
 
 abstract interface class PlayerBackend {
   VideoController? get videoController;
@@ -8,6 +9,7 @@ abstract interface class PlayerBackend {
   Stream<Duration> get durationStream;
   Stream<bool> get playingStream;
   Stream<double> get volumeStream;
+  Stream<Tracks> get tracksStream;
 
   Future<void> open(String source);
   Future<void> play();

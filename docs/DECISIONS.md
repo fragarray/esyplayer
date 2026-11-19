@@ -22,3 +22,6 @@
   secondary subtitles to the top; per mpv's API, their font and color styling
   is shared, while position, scale, delay, visibility, and ASS override can be
   configured independently.
+- 2026-11-21: Audio and subtitle track menus are populated from media_kit's
+  available-track stream, keeping track discovery inside the playback backend
+  and allowing external subtitle tracks to appear as mpv reports them.

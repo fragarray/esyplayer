@@ -36,6 +36,7 @@
 ## Milestone 5 - Tracks
 
 - [x] Subtitle track selection and secondary subtitle
+- [x] Show available audio and subtitle tracks in nested menus
 - [x] External subtitles, delay and encoding
 - [x] Subtitle styling
 - [x] Persist subtitle styling and separate primary/secondary positioning

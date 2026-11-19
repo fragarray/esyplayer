@@ -89,38 +89,86 @@ class PlayerScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _trackDialog(
-    BuildContext context,
-    PlayerController controller,
-    String title,
-    Future<void> Function(String id) apply,
-  ) async {
-    final textController = TextEditingController(text: '0');
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: textController,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Track ID'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, textController.text.trim()),
-            child: const Text('Apply'),
-          ),
-        ],
-      ),
-    );
-    if (value != null) {
-      await apply(value);
+  String _trackLabel({
+    required String id,
+    String? title,
+    String? language,
+    String? codec,
+    bool? isDefault,
+  }) {
+    if (id == 'auto') {
+      return 'Automatico';
     }
+    if (id == 'no') {
+      return 'Disattivato';
+    }
+
+    return [
+      if (title?.trim().isNotEmpty == true) title!.trim(),
+      if (language?.trim().isNotEmpty == true) language!.trim(),
+      if (codec?.trim().isNotEmpty == true) codec!.trim(),
+      'ID $id',
+      if (isDefault == true) 'predefinita',
+    ].join(' · ');
+  }
+
+  List<Widget> _audioTrackItems(PlayerController controller) {
+    final tracks = controller.tracks.audio;
+    if (tracks.isEmpty) {
+      return [
+        const MenuItemButton(
+          onPressed: null,
+          child: Text('Nessuna traccia disponibile'),
+        ),
+      ];
+    }
+    return [
+      for (final track in tracks)
+        MenuItemButton(
+          onPressed: () => controller.setAudioTrack(track.id),
+          child: Text(
+            _trackLabel(
+              id: track.id,
+              title: track.title,
+              language: track.language,
+              codec: track.codec,
+              isDefault: track.isDefault,
+            ),
+          ),
+        ),
+    ];
+  }
+
+  List<Widget> _subtitleTrackItems(
+    PlayerController controller, {
+    required bool secondary,
+  }) {
+    final tracks = controller.tracks.subtitle;
+    if (tracks.isEmpty) {
+      return [
+        const MenuItemButton(
+          onPressed: null,
+          child: Text('Nessuna traccia disponibile'),
+        ),
+      ];
+    }
+    return [
+      for (final track in tracks)
+        MenuItemButton(
+          onPressed: () => secondary
+              ? controller.setSecondarySubtitleTrack(track.id)
+              : controller.setSubtitleTrack(track.id),
+          child: Text(
+            _trackLabel(
+              id: track.id,
+              title: track.title,
+              language: track.language,
+              codec: track.codec,
+              isDefault: track.isDefault,
+            ),
+          ),
+        ),
+    ];
   }
 
   Future<void> _propertyDialog(
@@ -457,15 +505,7 @@ class PlayerScreen extends ConsumerWidget {
         ),
       ]),
       submenu('Audio', [
-        item(
-          'Seleziona traccia…',
-          () => _trackDialog(
-            context,
-            controller,
-            'Traccia audio',
-            controller.setAudioTrack,
-          ),
-        ),
+        submenu('Traccia audio', _audioTrackItems(controller)),
         item('Muto / attiva audio', controller.toggleMute),
         submenu('Volume', [
           for (final volume in [50, 100, 150, 200])
@@ -477,23 +517,13 @@ class PlayerScreen extends ConsumerWidget {
         ),
       ]),
       submenu('Sottotitoli', [
-        item(
-          'Seleziona traccia…',
-          () => _trackDialog(
-            context,
-            controller,
-            'Traccia sottotitoli',
-            controller.setSubtitleTrack,
-          ),
+        submenu(
+          'Sottotitolo primario',
+          _subtitleTrackItems(controller, secondary: false),
         ),
-        item(
-          'Seconda traccia…',
-          () => _trackDialog(
-            context,
-            controller,
-            'Seconda traccia sottotitoli',
-            controller.setSecondarySubtitleTrack,
-          ),
+        submenu(
+          'Sottotitolo secondario',
+          _subtitleTrackItems(controller, secondary: true),
         ),
         item('Carica file esterno…', () => _loadSubtitle(controller)),
         submenu('Dimensione', [

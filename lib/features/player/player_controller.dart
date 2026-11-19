@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:media_kit/media_kit.dart' show Tracks;
 
 import '../../core/player/player_backend.dart';
 import '../../core/settings/settings.dart';
@@ -27,6 +28,10 @@ class PlayerController extends ChangeNotifier {
         volume = value;
         notifyListeners();
       }),
+      backend.tracksStream.listen((value) {
+        tracks = value;
+        notifyListeners();
+      }),
     ]);
   }
 
@@ -38,12 +43,15 @@ class PlayerController extends ChangeNotifier {
 
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
+  Tracks tracks = const Tracks(video: [], audio: [], subtitle: []);
   bool isPlaying = false;
   double volume = 100;
   bool isMuted = false;
 
   Future<void> open(String source) async {
     currentSource = source;
+    tracks = const Tracks(video: [], audio: [], subtitle: []);
+    notifyListeners();
     await database?.addRecentFile(source);
     final subtitlePreferences =
         await settings?.getSubtitlePreferences() ??

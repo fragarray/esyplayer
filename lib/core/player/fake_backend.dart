@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import 'player_backend.dart';
@@ -11,11 +12,13 @@ class FakeBackend implements PlayerBackend {
   final _duration = StreamController<Duration>.broadcast();
   final _playing = StreamController<bool>.broadcast();
   final _volume = StreamController<double>.broadcast();
+  final _tracks = StreamController<Tracks>.broadcast();
 
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
   bool playing = false;
   double volume = 100;
+  Tracks availableTracks = const Tracks(video: [], audio: [], subtitle: []);
   final Map<String, String> properties = {};
 
   @override
@@ -34,9 +37,18 @@ class FakeBackend implements PlayerBackend {
   Stream<double> get volumeStream => _volume.stream;
 
   @override
+  Stream<Tracks> get tracksStream => _tracks.stream;
+
+  @override
   Future<void> open(String source) async {
     playing = true;
     _playing.add(true);
+    _tracks.add(availableTracks);
+  }
+
+  void setAvailableTracks(Tracks value) {
+    availableTracks = value;
+    _tracks.add(value);
   }
 
   @override
@@ -142,5 +154,6 @@ class FakeBackend implements PlayerBackend {
     await _duration.close();
     await _playing.close();
     await _volume.close();
+    await _tracks.close();
   }
 }
