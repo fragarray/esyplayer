@@ -18,12 +18,12 @@
 
 ## Milestone 3 - Controls
 
-- [ ] Seek bar with time preview
-- [ ] Volume/mute and boost
-- [ ] Fullscreen and always-on-top
-- [ ] Keyboard shortcuts
-- [ ] Drag-and-drop
-- [ ] Open file, folder, URL
+- [x] Seek bar with time preview
+- [x] Volume/mute and boost
+- [x] Fullscreen and always-on-top
+- [x] Keyboard shortcuts
+- [x] Drag-and-drop
+- [x] Open file, folder, URL
 
 ## Milestone 4 - Library
 

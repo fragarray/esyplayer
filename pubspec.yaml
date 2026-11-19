@@ -51,6 +51,7 @@ dependencies:
   intl: ^0.20.3
   flutter_localizations:
     sdk: flutter
+  nativeapi: ^0.5.10
 
 dev_dependencies:
   flutter_test:
