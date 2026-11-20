@@ -53,3 +53,8 @@
   `BorderStyle` via `sub-ass-force-style` (mpv 0.36) and
   `sub-ass-style-overrides` (newer mpv). Keep the fullscreen toolbar opaque
   with a theme-colored border, and pause its hide timer while hovered.
+- Shortcut feedback describes the action or adjustment (rather than assuming
+  the current mpv property value), appears over the video for two seconds, and
+  is replaced by the next shortcut. Ctrl+R/T adjust the primary subtitle scale
+  by 0.1 through the backend; these changes are not persisted as preferences.
+  Outside clicks dismiss the context-menu chain, whose rows are 30 pixels high.

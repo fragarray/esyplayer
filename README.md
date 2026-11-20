@@ -18,6 +18,10 @@ flutter run -d linux
 ```
 
 Right-click the playback surface to open the grouped command and settings menus.
+Keyboard shortcuts display brief feedback in the upper-right of the video.
+Ctrl+R and Ctrl+T increase and decrease the primary subtitle scale by 10
+percentage points, respectively; Z and X change subtitle delay by 0.1 seconds.
+These shortcut adjustments apply to the current playback session.
 
 ## Linux prerequisites
 

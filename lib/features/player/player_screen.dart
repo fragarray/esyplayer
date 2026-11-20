@@ -19,8 +19,9 @@ import '../../core/settings/settings_providers.dart';
 import '../subtitles/subtitle_preferences_dialog.dart';
 
 const _menuButtonStyle = ButtonStyle(
-  minimumSize: WidgetStatePropertyAll(Size(0, 38)),
-  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
+  minimumSize: WidgetStatePropertyAll(Size(0, 30)),
+  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 8)),
+  textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 13)),
   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
   visualDensity: VisualDensity.standard,
 );
@@ -33,7 +34,7 @@ const _submenuMenuStyle = MenuStyle(
   padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
   visualDensity: VisualDensity.compact,
 );
-const _menuRowHeight = 38.0;
+const _menuRowHeight = 30.0;
 const _menuSurfacePadding = 4.0;
 const _submenuGap = 8.0;
 
@@ -49,6 +50,8 @@ class PlayerScreen extends ConsumerStatefulWidget {
 class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   final List<String> _recentFilePaths = [];
   Timer? _controlsTimer;
+  Timer? _feedbackTimer;
+  String? _feedback;
   nativeapi.Window? _window;
   nativeapi.ListenerId? _windowListenerId;
   String? _recentFilesError;
@@ -136,9 +139,31 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     if (window == null) {
       return;
     }
+
     final value = !window.isFullScreen;
     window.isFullScreen = value;
     _setFullScreenState(value);
+  }
+
+  void _showFeedback(String message) {
+    if (!mounted) return;
+    _feedbackTimer?.cancel();
+    setState(() => _feedback = message);
+    _feedbackTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _feedback = null);
+    });
+  }
+
+  Future<void> _runShortcut(
+    Future<void> Function() action,
+    String message,
+  ) async {
+    try {
+      await action();
+      _showFeedback(message);
+    } catch (error) {
+      _showFeedback('Errore: $error');
+    }
   }
 
   Future<void> _refreshRecentFiles(PlayerController controller) async {
@@ -179,6 +204,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   @override
   void dispose() {
     _controlsTimer?.cancel();
+    _feedbackTimer?.cancel();
     final listenerId = _windowListenerId;
     if (listenerId != null) {
       _window?.removeListener(listenerId);
@@ -801,6 +827,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           shortcut: 'X',
         ),
         submenu('Dimensione', [
+          item(
+            'Aumenta dimensione',
+            () => controller.command(['add', 'sub-scale', '0.1']),
+            shortcut: 'Ctrl+R',
+          ),
+          item(
+            'Diminuisci dimensione',
+            () => controller.command(['add', 'sub-scale', '-0.1']),
+            shortcut: 'Ctrl+T',
+          ),
           for (final size in [75, 100, 125, 150, 200])
             item('$size%', () => controller.setSubtitleSize(size)),
         ]),
@@ -958,16 +994,45 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final seekValue = positionSeconds.clamp(0, seekMax).toDouble();
     final videoSurface = GestureDetector(
       onDoubleTap: controller.currentSource == null ? null : _toggleFullScreen,
-      child: ColoredBox(
-        color: Colors.black,
-        child: videoController == null
-            ? const Center(
-                child: Text(
-                  'Nessun media caricato',
-                  style: TextStyle(color: Colors.white),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(
+            color: Colors.black,
+            child: videoController == null
+                ? const Center(
+                    child: Text(
+                      'Nessun media caricato',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                : Video(controller: videoController, controls: NoVideoControls),
+          ),
+          if (_feedback != null)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      _feedback!,
+                      key: const ValueKey('shortcut-feedback'),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
-              )
-            : Video(controller: videoController, controls: NoVideoControls),
+              ),
+            ),
+        ],
       ),
     );
     final theme = Theme.of(context);
@@ -1135,17 +1200,27 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         SingleActivator(LogicalKeyboardKey.keyX): _PlayerActionIntent(
           _PlayerAction.subtitleDelayUp,
         ),
+        SingleActivator(LogicalKeyboardKey.keyR, control: true):
+            _PlayerActionIntent(_PlayerAction.subtitleSizeUp),
+        SingleActivator(LogicalKeyboardKey.keyT, control: true):
+            _PlayerActionIntent(_PlayerAction.subtitleSizeDown),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
           ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) => controller.playOrPause(),
+            onInvoke: (_) => _runShortcut(
+              controller.playOrPause,
+              controller.isPlaying ? 'Pausa' : 'Riproduci',
+            ),
           ),
           _SeekIntent: CallbackAction<_SeekIntent>(
             onInvoke: (intent) {
               final target = controller.position + intent.offset;
-              return controller.seek(
-                target.isNegative ? Duration.zero : target,
+              final seconds = intent.offset.inSeconds;
+              return _runShortcut(
+                () =>
+                    controller.seek(target.isNegative ? Duration.zero : target),
+                'Salto ${seconds > 0 ? '+' : ''}$seconds s',
               );
             },
           ),
@@ -1154,39 +1229,93 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               switch (intent.action) {
                 case _PlayerAction.fullscreen:
                   _toggleFullScreen();
+                  _showFeedback(
+                    _isFullScreen ? 'Schermata intera' : 'Modalità finestra',
+                  );
                   return null;
                 case _PlayerAction.screenshot:
-                  return controller.command(['screenshot', 'subtitles']);
+                  return _runShortcut(
+                    () => controller.command(['screenshot', 'subtitles']),
+                    'Schermata salvata',
+                  );
                 case _PlayerAction.mute:
-                  return controller.toggleMute();
+                  return _runShortcut(
+                    controller.toggleMute,
+                    controller.isMuted ? 'Audio attivato' : 'Audio disattivato',
+                  );
                 case _PlayerAction.previousItem:
-                  return controller.previous();
+                  return _runShortcut(
+                    controller.previous,
+                    'Elemento precedente',
+                  );
                 case _PlayerAction.nextItem:
-                  return controller.next();
+                  return _runShortcut(controller.next, 'Elemento successivo');
                 case _PlayerAction.previousAudio:
-                  return controller.command(['cycle', 'aid', 'down']);
+                  return _runShortcut(
+                    () => controller.command(['cycle', 'aid', 'down']),
+                    'Traccia audio precedente',
+                  );
                 case _PlayerAction.nextAudio:
-                  return controller.command(['cycle', 'aid']);
+                  return _runShortcut(
+                    () => controller.command(['cycle', 'aid']),
+                    'Traccia audio successiva',
+                  );
                 case _PlayerAction.previousSubtitle:
-                  return controller.command(['cycle', 'sid', 'down']);
+                  return _runShortcut(
+                    () => controller.command(['cycle', 'sid', 'down']),
+                    'Traccia sottotitoli precedente',
+                  );
                 case _PlayerAction.nextSubtitle:
-                  return controller.command(['cycle', 'sid']);
+                  return _runShortcut(
+                    () => controller.command(['cycle', 'sid']),
+                    'Traccia sottotitoli successiva',
+                  );
                 case _PlayerAction.frameBackStep:
-                  return controller.command(['frame-back-step']);
+                  return _runShortcut(
+                    () => controller.command(['frame-back-step']),
+                    'Fotogramma precedente',
+                  );
                 case _PlayerAction.frameStep:
-                  return controller.command(['frame-step']);
+                  return _runShortcut(
+                    () => controller.command(['frame-step']),
+                    'Fotogramma successivo',
+                  );
                 case _PlayerAction.volumeDown:
-                  return controller.setVolume(
-                    (controller.volume - 5).clamp(0, 200).toDouble(),
+                  final volume = (controller.volume - 5)
+                      .clamp(0, 200)
+                      .toDouble();
+                  return _runShortcut(
+                    () => controller.setVolume(volume),
+                    'Volume ${volume.round()}%',
                   );
                 case _PlayerAction.volumeUp:
-                  return controller.setVolume(
-                    (controller.volume + 5).clamp(0, 200).toDouble(),
+                  final volume = (controller.volume + 5)
+                      .clamp(0, 200)
+                      .toDouble();
+                  return _runShortcut(
+                    () => controller.setVolume(volume),
+                    'Volume ${volume.round()}%',
                   );
                 case _PlayerAction.subtitleDelayDown:
-                  return controller.command(['add', 'sub-delay', '-0.1']);
+                  return _runShortcut(
+                    () => controller.command(['add', 'sub-delay', '-0.1']),
+                    'Ritardo sottotitoli −0,1 s',
+                  );
                 case _PlayerAction.subtitleDelayUp:
-                  return controller.command(['add', 'sub-delay', '0.1']);
+                  return _runShortcut(
+                    () => controller.command(['add', 'sub-delay', '0.1']),
+                    'Ritardo sottotitoli +0,1 s',
+                  );
+                case _PlayerAction.subtitleSizeDown:
+                  return _runShortcut(
+                    () => controller.command(['add', 'sub-scale', '-0.1']),
+                    'Dimensione sottotitoli −10%',
+                  );
+                case _PlayerAction.subtitleSizeUp:
+                  return _runShortcut(
+                    () => controller.command(['add', 'sub-scale', '0.1']),
+                    'Dimensione sottotitoli +10%',
+                  );
               }
             },
           ),
@@ -1202,7 +1331,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 onPointerDown: (event) {
                   if (event.kind != ui.PointerDeviceKind.touch &&
                       event.buttons == kSecondaryMouseButton) {
+                    if (menuController.isOpen) menuController.close();
                     menuController.open(position: event.localPosition);
+                  } else if (menuController.isOpen) {
+                    menuController.close();
                   }
                 },
                 child: MouseRegion(
@@ -1338,6 +1470,8 @@ enum _PlayerAction {
   volumeUp,
   subtitleDelayDown,
   subtitleDelayUp,
+  subtitleSizeDown,
+  subtitleSizeUp,
 }
 
 class _PlayerActionIntent extends Intent {

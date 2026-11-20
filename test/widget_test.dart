@@ -14,6 +14,17 @@ import 'package:esyplayer/core/settings/settings.dart';
 import 'package:esyplayer/features/player/player_providers.dart';
 import 'package:esyplayer/features/subtitles/subtitle_preferences_dialog.dart';
 
+class RecordingBackend extends FakeBackend {
+  final commands = <List<String>>[];
+  bool failCommand = false;
+
+  @override
+  Future<void> command(List<String> arguments) async {
+    if (failCommand) throw StateError('command failed');
+    commands.add(arguments);
+  }
+}
+
 void main() {
   testWidgets('shows application title', (tester) async {
     await tester.pumpWidget(
@@ -93,6 +104,97 @@ void main() {
     expect(find.text('←'), findsOneWidget);
 
     await gesture.up();
+  });
+
+  testWidgets('shortcuts show temporary feedback and adjust subtitle scale', (
+    tester,
+  ) async {
+    final backend = RecordingBackend();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(backend),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    expect(find.text('Riproduci'), findsOneWidget);
+    final video = tester.getRect(find.byType(Stack).first);
+    final feedback = tester.getRect(
+      find.byKey(const ValueKey('shortcut-feedback')),
+    );
+    expect(feedback.right, lessThanOrEqualTo(video.right));
+    expect(feedback.top, greaterThanOrEqualTo(video.top));
+    expect(feedback.center.dx, greaterThan(video.center.dx));
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
+    await tester.pump();
+    expect(backend.commands.last, ['add', 'sub-delay', '0.1']);
+    expect(find.text('Ritardo sottotitoli +0,1 s'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1100));
+    expect(find.byKey(const ValueKey('shortcut-feedback')), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.pump();
+    expect(backend.commands.last, ['add', 'sub-scale', '0.1']);
+    expect(find.text('Dimensione sottotitoli +10%'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(backend.commands.last, ['add', 'sub-scale', '-0.1']);
+    expect(find.text('Dimensione sottotitoli −10%'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(const ValueKey('shortcut-feedback')), findsNothing);
+    backend.failCommand = true;
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.pump();
+    expect(
+      find.textContaining('Errore: Bad state: command failed'),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('outside click closes root and nested menus', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(FakeBackend()),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      const Offset(250, 200),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sottotitoli'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dimensione'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ctrl+R'), findsOneWidget);
+    expect(find.text('Ctrl+T'), findsOneWidget);
+
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.text('Apri'), findsNothing);
+    expect(find.text('Dimensione'), findsNothing);
+    expect(find.text('Ctrl+R'), findsNothing);
   });
 
   testWidgets('recent files are nested under Open', (tester) async {
@@ -190,8 +292,8 @@ void main() {
       firstItem.left >= mainMenu.right || lastItem.right <= mainMenu.left,
       isTrue,
     );
-    expect(firstItem.height, lessThan(48));
-    expect(triggerItem.height, lessThan(48));
+    expect(firstItem.height, lessThanOrEqualTo(30));
+    expect(triggerItem.height, lessThanOrEqualTo(30));
 
     await gesture.up();
   });
