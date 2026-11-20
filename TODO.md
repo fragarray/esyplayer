@@ -64,6 +64,12 @@
 ## Milestone 8 - Diagnostics and polish
 
 - [x] Add right-click command menu with grouped settings and no player logo
+- [x] Show up to six recent files in the Open submenu
+- [x] Reset subtitle preferences and force ASS style override when changing
+  border style
+- [x] Toggle fullscreen with video double-click and auto-hide the bottom
+  controls after two seconds
+- [x] Align submenus with their trigger row and open the context menu at the pointer
 - [x] Stats overlay
 - [x] Media info dialog
 - [x] Raw mpv command palette

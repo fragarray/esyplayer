@@ -9,7 +9,9 @@ import 'package:esyplayer/features/player/player_controller.dart';
 import 'package:esyplayer/features/player/player_screen.dart';
 import 'package:esyplayer/main.dart';
 import 'package:esyplayer/core/player/fake_backend.dart';
+import 'package:esyplayer/core/settings/settings.dart';
 import 'package:esyplayer/features/player/player_providers.dart';
+import 'package:esyplayer/features/subtitles/subtitle_preferences_dialog.dart';
 
 void main() {
   testWidgets('shows application title', (tester) async {
@@ -47,6 +49,75 @@ void main() {
     await tester.tap(find.text('Opzioni'));
     await tester.pumpAndSettle();
     expect(find.text('Aspetto e lingua'), findsOneWidget);
+
+    await gesture.up();
+  });
+
+  testWidgets('recent files are nested under Open', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(FakeBackend()),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Nessun media caricato')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('File recenti'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nessun file recente'), findsOneWidget);
+    await gesture.up();
+  });
+
+  testWidgets('submenus remain vertically reachable from their trigger', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(FakeBackend()),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Nessun media caricato')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    final triggerCenterY = tester.getCenter(find.text('Video')).dy;
+    await tester.tap(find.text('Video'));
+    await tester.pumpAndSettle();
+
+    final firstItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Schermata'),
+        matching: find.byType(MenuItemButton),
+      ),
+    );
+    final lastItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Proprietà e filtri video…'),
+        matching: find.byType(MenuItemButton),
+      ),
+    );
+    expect(triggerCenterY, greaterThanOrEqualTo(firstItem.top));
+    expect(triggerCenterY, lessThanOrEqualTo(lastItem.bottom));
 
     await gesture.up();
   });
@@ -138,5 +209,101 @@ void main() {
     await tester.tap(find.text('French · fr · subrip · ID 3'));
     await tester.pumpAndSettle();
     expect(backend.properties['secondary-sid'], '3');
+  });
+
+  testWidgets('subtitle preferences restore their defaults', (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    late Future<Map<String, String>?> result;
+    final initialValues = Map<String, String>.of(
+      AppSettings.subtitlePreferenceDefaults,
+    )..['sub-font'] = 'Custom font';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () {
+                  result = showDialog<Map<String, String>>(
+                    context: context,
+                    builder: (_) =>
+                        SubtitlePreferencesDialog(initialValues: initialValues),
+                  );
+                },
+                child: const Text('Open preferences'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open preferences'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ripristina predefinite'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(await result, AppSettings.subtitlePreferenceDefaults);
+  });
+
+  testWidgets('changing subtitle border forces ASS style overrides', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    late Future<Map<String, String>?> result;
+    final initialValues = Map<String, String>.of(
+      AppSettings.subtitlePreferenceDefaults,
+    )..['sub-ass-override'] = 'no';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () {
+                  result = showDialog<Map<String, String>>(
+                    context: context,
+                    builder: (_) =>
+                        SubtitlePreferencesDialog(initialValues: initialValues),
+                  );
+                },
+                child: const Text('Open preferences'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open preferences'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bordo e ombra'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Riquadro opaco').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Riquadro opaco'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bordo e ombra').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    final savedValues = await result;
+    expect(savedValues?['sub-border-style'], 'outline-and-shadow');
+    expect(savedValues?['sub-ass-override'], 'force');
   });
 }

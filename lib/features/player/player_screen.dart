@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -17,10 +18,135 @@ import 'player_providers.dart';
 import '../../core/settings/settings_providers.dart';
 import '../subtitles/subtitle_preferences_dialog.dart';
 
-class PlayerScreen extends ConsumerWidget {
+class PlayerScreen extends ConsumerStatefulWidget {
   const PlayerScreen({super.key, this.enableDropTarget = true});
 
   final bool enableDropTarget;
+
+  @override
+  ConsumerState<PlayerScreen> createState() => _PlayerScreenState();
+}
+
+class _PlayerScreenState extends ConsumerState<PlayerScreen> {
+  final List<String> _recentFilePaths = [];
+  Timer? _controlsTimer;
+  nativeapi.Window? _window;
+  nativeapi.ListenerId? _windowListenerId;
+  String? _recentFilesError;
+  bool _isFullScreen = false;
+  bool _controlsVisible = true;
+  bool _recentFilesLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _window = WindowManager.instance.getCurrent();
+    final window = _window;
+    if (window != null) {
+      _isFullScreen = window.isFullScreen;
+      _windowListenerId = window.addListener(_handleWindowEvent);
+      if (_isFullScreen) {
+        _scheduleControlsHide();
+      }
+    }
+  }
+
+  void _handleWindowEvent(nativeapi.WindowEvent event) {
+    if (event is nativeapi.WindowEnteredFullScreenEvent) {
+      _setFullScreenState(true);
+    } else if (event is nativeapi.WindowExitedFullScreenEvent) {
+      _setFullScreenState(false);
+    }
+  }
+
+  void _setFullScreenState(bool value) {
+    if (!mounted) {
+      return;
+    }
+    _controlsTimer?.cancel();
+    setState(() {
+      _isFullScreen = value;
+      _controlsVisible = true;
+    });
+    if (value) {
+      _scheduleControlsHide();
+    }
+  }
+
+  void _scheduleControlsHide() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted && _isFullScreen) {
+        setState(() => _controlsVisible = false);
+      }
+    });
+  }
+
+  void _revealControls() {
+    if (!_isFullScreen) {
+      return;
+    }
+    _controlsTimer?.cancel();
+    if (!_controlsVisible) {
+      setState(() => _controlsVisible = true);
+    }
+    _scheduleControlsHide();
+  }
+
+  void _toggleFullScreen() {
+    final window = _window ?? WindowManager.instance.getCurrent();
+    if (window == null) {
+      return;
+    }
+    final value = !window.isFullScreen;
+    window.isFullScreen = value;
+    _setFullScreenState(value);
+  }
+
+  Future<void> _refreshRecentFiles(PlayerController controller) async {
+    if (!mounted || _recentFilesLoading) {
+      return;
+    }
+    setState(() {
+      _recentFilesLoading = true;
+      _recentFilesError = null;
+    });
+    try {
+      final files = await controller.database?.recentFilesList(limit: 6) ?? [];
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _recentFilePaths
+          ..clear()
+          ..addAll(files.take(6).map((file) => file.path));
+        _recentFilesLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _recentFilesError = error.toString();
+        _recentFilesLoading = false;
+      });
+    }
+  }
+
+  String _recentFileLabel(String path) {
+    final name = path.replaceAll('\\', '/').split('/').last;
+    return name.isEmpty ? path : name;
+  }
+
+  @override
+  void dispose() {
+    _controlsTimer?.cancel();
+    final listenerId = _windowListenerId;
+    if (listenerId != null) {
+      _window?.removeListener(listenerId);
+    }
+    super.dispose();
+  }
 
   Future<void> _openFile(PlayerController controller) async {
     final file = await FilePicker.pickFile(type: FileType.media);
@@ -253,24 +379,6 @@ class PlayerScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _showRecentFiles(
-    BuildContext context,
-    PlayerController controller,
-  ) async {
-    final files = await controller.database?.recentFilesList() ?? [];
-    if (!context.mounted) {
-      return;
-    }
-    final path = await _choosePath(
-      context,
-      'File recenti',
-      files.map((e) => e.path).toList(),
-    );
-    if (path != null) {
-      await controller.open(path);
-    }
-  }
-
   Future<void> _showFavorites(
     BuildContext context,
     WidgetRef ref,
@@ -425,8 +533,37 @@ class PlayerScreen extends ConsumerWidget {
     final currentSource = controller.currentSource;
     MenuItemButton item(String label, VoidCallback? onPressed) =>
         MenuItemButton(onPressed: onPressed, child: Text(label));
-    SubmenuButton submenu(String label, List<Widget> children) =>
-        SubmenuButton(menuChildren: children, child: Text(label));
+    SubmenuButton submenu(
+      String label,
+      List<Widget> children, {
+      VoidCallback? onOpen,
+    }) => SubmenuButton(
+      menuChildren: children,
+      menuStyle: const MenuStyle(alignment: AlignmentDirectional.centerStart),
+      onOpen: onOpen,
+      child: Text(label),
+    );
+
+    final recentFileItems = _recentFilesLoading
+        ? [item('Caricamento…', null)]
+        : _recentFilesError != null
+        ? [item('Errore: $_recentFilesError', null)]
+        : _recentFilePaths.isEmpty
+        ? [item('Nessun file recente', null)]
+        : [
+            for (final path in _recentFilePaths.take(6))
+              MenuItemButton(
+                onPressed: () => controller.open(path),
+                child: Tooltip(
+                  message: path,
+                  child: Text(
+                    _recentFileLabel(path),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ];
 
     return [
       submenu('Apri', [
@@ -434,7 +571,11 @@ class PlayerScreen extends ConsumerWidget {
         item('Cartella…', () => _openFolder(controller)),
         item('URL o stream…', () => _openUrl(context, controller)),
         item('Playlist M3U/PLS…', () => _openPlaylist(controller)),
-        item('File recenti', () => _showRecentFiles(context, controller)),
+        submenu(
+          'File recenti',
+          recentFileItems,
+          onOpen: () => _refreshRecentFiles(controller),
+        ),
       ]),
       submenu('Riproduci', [
         item(
@@ -558,11 +699,7 @@ class PlayerScreen extends ConsumerWidget {
         item('Elemento successivo', controller.next),
       ]),
       submenu('Visualizza', [
-        item('Schermata intera', () {
-          if (window != null) {
-            window.isFullScreen = !window.isFullScreen;
-          }
-        }),
+        item('Schermata intera', _toggleFullScreen),
         item('Sempre in primo piano', () {
           if (window != null) {
             window.isAlwaysOnTop = !window.isAlwaysOnTop;
@@ -678,7 +815,7 @@ class PlayerScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final controller = ref.watch(playerControllerProvider);
     final videoController = controller.backend.videoController;
 
@@ -686,92 +823,110 @@ class PlayerScreen extends ConsumerWidget {
     final positionSeconds = controller.position.inMilliseconds / 1000;
     final double seekMax = durationSeconds > 0 ? durationSeconds : 1;
     final seekValue = positionSeconds.clamp(0, seekMax).toDouble();
-    final window = WindowManager.instance.getCurrent();
-    final playerBody = Column(
-      children: [
-        Expanded(
-          child: ColoredBox(
-            color: Colors.black,
-            child: videoController == null
-                ? const Center(
-                    child: Text(
-                      'Nessun media caricato',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                : Video(controller: videoController, controls: NoVideoControls),
+    final videoSurface = GestureDetector(
+      onDoubleTap: controller.currentSource == null ? null : _toggleFullScreen,
+      child: ColoredBox(
+        color: Colors.black,
+        child: videoController == null
+            ? const Center(
+                child: Text(
+                  'Nessun media caricato',
+                  style: TextStyle(color: Colors.white),
+                ),
+              )
+            : Video(controller: videoController, controls: NoVideoControls),
+      ),
+    );
+    final controls = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: controller.isPlaying ? 'Pausa' : 'Riproduci',
+            onPressed: controller.playOrPause,
+            icon: Icon(controller.isPlaying ? Icons.pause : Icons.play_arrow),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          IconButton(
+            tooltip: 'Stop',
+            onPressed: controller.stop,
+            icon: const Icon(Icons.stop),
+          ),
+          IconButton(
+            tooltip: 'Elemento precedente',
+            onPressed: controller.previous,
+            icon: const Icon(Icons.skip_previous),
+          ),
+          Expanded(
+            child: Slider(
+              value: seekValue,
+              min: 0,
+              max: seekMax,
+              label: _format(Duration(seconds: seekValue.round())),
+              onChanged: (value) =>
+                  controller.seek(Duration(seconds: value.round())),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Elemento successivo',
+            onPressed: controller.next,
+            icon: const Icon(Icons.skip_next),
+          ),
+          IconButton(
+            tooltip: 'Schermo intero',
+            onPressed: _toggleFullScreen,
+            icon: const Icon(Icons.fullscreen),
+          ),
+          IconButton(
+            tooltip: controller.isMuted ? 'Attiva audio' : 'Disattiva audio',
+            onPressed: controller.toggleMute,
+            icon: Icon(controller.isMuted ? Icons.volume_off : Icons.volume_up),
+          ),
+          SizedBox(
+            width: 82,
+            child: Slider(
+              value: controller.volume.clamp(0, 200).toDouble(),
+              min: 0,
+              max: 200,
+              onChanged: controller.setVolume,
+            ),
+          ),
+          Text(
+            '${_format(controller.position)} / '
+            '${_format(controller.duration)}',
+          ),
+        ],
+      ),
+    );
+    final playerBody = _isFullScreen
+        ? Stack(
+            fit: StackFit.expand,
             children: [
-              IconButton(
-                tooltip: controller.isPlaying ? 'Pausa' : 'Riproduci',
-                onPressed: controller.playOrPause,
-                icon: Icon(
-                  controller.isPlaying ? Icons.pause : Icons.play_arrow,
+              videoSurface,
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ClipRect(
+                  child: AnimatedSlide(
+                    offset: _controlsVisible
+                        ? Offset.zero
+                        : const Offset(0, 1.05),
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeIn,
+                    child: AnimatedOpacity(
+                      opacity: _controlsVisible ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: controls,
+                    ),
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Stop',
-                onPressed: controller.stop,
-                icon: const Icon(Icons.stop),
-              ),
-              IconButton(
-                tooltip: 'Elemento precedente',
-                onPressed: controller.previous,
-                icon: const Icon(Icons.skip_previous),
-              ),
-              Expanded(
-                child: Slider(
-                  value: seekValue,
-                  min: 0,
-                  max: seekMax,
-                  label: _format(Duration(seconds: seekValue.round())),
-                  onChanged: (value) =>
-                      controller.seek(Duration(seconds: value.round())),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Elemento successivo',
-                onPressed: controller.next,
-                icon: const Icon(Icons.skip_next),
-              ),
-              IconButton(
-                tooltip: 'Schermo intero',
-                onPressed: window == null
-                    ? null
-                    : () => window.isFullScreen = !window.isFullScreen,
-                icon: const Icon(Icons.fullscreen),
-              ),
-              IconButton(
-                tooltip: controller.isMuted
-                    ? 'Attiva audio'
-                    : 'Disattiva audio',
-                onPressed: controller.toggleMute,
-                icon: Icon(
-                  controller.isMuted ? Icons.volume_off : Icons.volume_up,
-                ),
-              ),
-              SizedBox(
-                width: 82,
-                child: Slider(
-                  value: controller.volume.clamp(0, 200).toDouble(),
-                  min: 0,
-                  max: 200,
-                  onChanged: controller.setVolume,
-                ),
-              ),
-              Text(
-                '${_format(controller.position)} / '
-                '${_format(controller.duration)}',
               ),
             ],
-          ),
-        ),
-      ],
-    );
+          )
+        : Column(
+            children: [
+              Expanded(child: videoSurface),
+              controls,
+            ],
+          );
 
     return Shortcuts(
       shortcuts: const <ShortcutActivator, Intent>{
@@ -807,12 +962,15 @@ class PlayerScreen extends ConsumerWidget {
                 onPointerDown: (event) {
                   if (event.kind != ui.PointerDeviceKind.touch &&
                       event.buttons == kSecondaryMouseButton) {
-                    menuController.open(position: event.position);
+                    menuController.open(position: event.localPosition);
                   }
                 },
-                child: child,
+                child: MouseRegion(
+                  onHover: (_) => _revealControls(),
+                  child: child,
+                ),
               ),
-              child: enableDropTarget
+              child: widget.enableDropTarget
                   ? DropTarget(
                       onDragDone: (details) {
                         if (details.files.isNotEmpty) {

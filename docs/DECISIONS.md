@@ -28,3 +28,10 @@
 - 2026-11-21: Use native libass subtitle rendering so mpv style preferences do
   not overlap media_kit's Flutter subtitle overlay. Disable media_kit's in-video
   controls and keep all playback controls in the persistent bottom toolbar.
+- Context-menu submenus align to their trigger row, and the root menu uses the
+  pointer's local position so nested options remain reachable in the window.
+- The recent-files submenu queries and displays at most six paths. Subtitle
+  border-style changes set `sub-ass-override=force` so libass applies the
+  selected border, while the reset action restores `AppSettings` defaults.
+- Fullscreen can be toggled by double-clicking active video. Its bottom
+  controls slide out after two seconds and return when the pointer moves.

@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../core/settings/settings.dart';
+
 /// Dialog per le preferenze dei sottotitoli.
 ///
 /// Restituisce (via Navigator.pop) la mappa aggiornata con le stesse chiavi
@@ -50,9 +52,23 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   void _setValue(String key, String value) {
     setState(() {
       _values[key] = value;
+      if (key == 'sub-border-style') {
+        _values['sub-ass-override'] = 'force';
+      }
       final controller = _controllers[key];
       if (controller != null && controller.text != value) {
         controller.text = value;
+      }
+    });
+  }
+
+  void _resetToDefaults() {
+    setState(() {
+      _values
+        ..clear()
+        ..addAll(AppSettings.subtitlePreferenceDefaults);
+      for (final entry in _controllers.entries) {
+        entry.value.text = _values[entry.key] ?? '';
       }
     });
   }
@@ -188,13 +204,16 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   }
 
   Widget _switch(String key, String label, {String? subtitle}) {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(label),
-      subtitle: subtitle == null ? null : Text(subtitle),
-      value: _bool(key),
-      onChanged: (v) => _setValue(key, v ? 'yes' : 'no'),
+    return Material(
+      color: Colors.transparent,
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(label),
+        subtitle: subtitle == null ? null : Text(subtitle),
+        value: _bool(key),
+        onChanged: (v) => _setValue(key, v ? 'yes' : 'no'),
+      ),
     );
   }
 
@@ -765,8 +784,13 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  TextButton.icon(
+                    onPressed: _resetToDefaults,
+                    icon: const Icon(Icons.restore_rounded),
+                    label: const Text('Ripristina predefinite'),
+                  ),
+                  const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Annulla'),

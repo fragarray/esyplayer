@@ -9,13 +9,17 @@
 - Play, pause, stop, seek, volume, mute, open file/folder/URL
 - Drag-and-drop files and directories
 - Fullscreen, always-on-top, and mini-window controls
+- Double-click fullscreen with bottom controls that hide after two seconds and
+  reappear on pointer movement
 - Keyboard play/pause and seek shortcuts
 - Drift storage for recent files, resume positions, and named playlists
+- Context-menu recent-files submenu capped at six items
 - M3U load/save helpers
 - Nested audio and primary/secondary subtitle menus list available media tracks
 - External subtitle loading
 - Persistent subtitle font, size, color, outline, margins, alignment, encoding,
   delay, and primary/secondary positioning preferences
+- Subtitle preference reset action and ASS border-style override
 - A-B loop property control
 - Native libass subtitle rendering with a single bottom playback toolbar
 - Raw mpv property dialog and command actions
