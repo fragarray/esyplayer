@@ -52,6 +52,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   Timer? _controlsTimer;
   Timer? _feedbackTimer;
   String? _feedback;
+  Future<void> _subtitleDelayQueue = Future<void>.value();
   nativeapi.Window? _window;
   nativeapi.ListenerId? _windowListenerId;
   String? _recentFilesError;
@@ -164,6 +165,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     } catch (error) {
       _showFeedback('Errore: $error');
     }
+  }
+
+  Future<void> _adjustSubtitleDelay(
+    PlayerController controller,
+    int direction,
+  ) {
+    _subtitleDelayQueue = _subtitleDelayQueue.then((_) async {
+      if (!mounted) return;
+      try {
+        await controller.command([
+          'add',
+          'sub-delay',
+          direction < 0 ? '-0.1' : '0.1',
+        ]);
+        final rawValue = await controller.getProperty('sub-delay');
+        final value = double.tryParse(rawValue);
+        if (value == null || !value.isFinite) {
+          throw FormatException('Ritardo sottotitoli non valido: $rawValue');
+        }
+        var formatted = value.abs().toStringAsFixed(6);
+        formatted = formatted.replaceFirst(RegExp(r'0+$'), '');
+        if (formatted.endsWith('.')) formatted += '0';
+        final sign = value < 0 && formatted != '0.0' ? '−' : '+';
+        _showFeedback(
+          'Ritardo sottotitoli primari $sign${formatted.replaceAll('.', ',')} s',
+        );
+      } catch (error) {
+        _showFeedback('Errore: $error');
+      }
+    });
+    return _subtitleDelayQueue;
   }
 
   Future<void> _refreshRecentFiles(PlayerController controller) async {
@@ -817,14 +849,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         ),
         item('Carica file esterno…', () => _loadSubtitle(controller)),
         item(
-          'Ritardo sottotitoli −0,1 s',
-          () => controller.command(['add', 'sub-delay', '-0.1']),
-          shortcut: 'Z',
+          'Ritardo sottotitoli primari −0,1 s',
+          () => _adjustSubtitleDelay(controller, -1),
+          shortcut: 'Z / Q',
         ),
         item(
-          'Ritardo sottotitoli +0,1 s',
-          () => controller.command(['add', 'sub-delay', '0.1']),
-          shortcut: 'X',
+          'Ritardo sottotitoli primari +0,1 s',
+          () => _adjustSubtitleDelay(controller, 1),
+          shortcut: 'X / W',
         ),
         submenu('Dimensione', [
           item(
@@ -1200,6 +1232,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         SingleActivator(LogicalKeyboardKey.keyX): _PlayerActionIntent(
           _PlayerAction.subtitleDelayUp,
         ),
+        SingleActivator(LogicalKeyboardKey.keyQ): _PlayerActionIntent(
+          _PlayerAction.subtitleDelayDown,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyW): _PlayerActionIntent(
+          _PlayerAction.subtitleDelayUp,
+        ),
         SingleActivator(LogicalKeyboardKey.keyR, control: true):
             _PlayerActionIntent(_PlayerAction.subtitleSizeUp),
         SingleActivator(LogicalKeyboardKey.keyT, control: true):
@@ -1297,15 +1335,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     'Volume ${volume.round()}%',
                   );
                 case _PlayerAction.subtitleDelayDown:
-                  return _runShortcut(
-                    () => controller.command(['add', 'sub-delay', '-0.1']),
-                    'Ritardo sottotitoli −0,1 s',
-                  );
+                  return _adjustSubtitleDelay(controller, -1);
                 case _PlayerAction.subtitleDelayUp:
-                  return _runShortcut(
-                    () => controller.command(['add', 'sub-delay', '0.1']),
-                    'Ritardo sottotitoli +0,1 s',
-                  );
+                  return _adjustSubtitleDelay(controller, 1);
                 case _PlayerAction.subtitleSizeDown:
                   return _runShortcut(
                     () => controller.command(['add', 'sub-scale', '-0.1']),

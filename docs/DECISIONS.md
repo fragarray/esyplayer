@@ -53,11 +53,14 @@
   `BorderStyle` via `sub-ass-force-style` (mpv 0.36) and
   `sub-ass-style-overrides` (newer mpv). Keep the fullscreen toolbar opaque
   with a theme-colored border, and pause its hide timer while hovered.
-- Shortcut feedback describes the action or adjustment (rather than assuming
-  the current mpv property value), appears over the video for two seconds, and
+- Shortcut feedback describes the action, appears over the video for two seconds, and
   is replaced by the next shortcut. Ctrl+R/T adjust the primary subtitle scale
   by 0.1 through the backend; these changes are not persisted as preferences.
   Outside clicks dismiss the context-menu chain, whose rows are 30 pixels high.
 - Subtitle preferences use a centered preview and track selector fixed above a
   scrollable, grouped settings list. The preview scales with available dialog
   space, while switching tracks returns the settings list to its beginning.
+- Z/X and Q/W both adjust primary subtitle delay, as explicitly requested;
+  Z/Q decrease it and X/W increase it. Queue these operations and read the
+  actual mpv property for the accumulated feedback, including changes made
+  elsewhere. Menu delay actions use the same path.

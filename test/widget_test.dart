@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,11 +19,35 @@ import 'package:esyplayer/features/subtitles/subtitle_preferences_dialog.dart';
 class RecordingBackend extends FakeBackend {
   final commands = <List<String>>[];
   bool failCommand = false;
+  bool invalidDelay = false;
 
   @override
   Future<void> command(List<String> arguments) async {
     if (failCommand) throw StateError('command failed');
     commands.add(arguments);
+    if (arguments.length == 3 &&
+        arguments[0] == 'add' &&
+        arguments[1] == 'sub-delay') {
+      final current = double.parse(properties['sub-delay'] ?? '0');
+      properties['sub-delay'] = '${current + double.parse(arguments[2])}';
+    }
+  }
+
+  @override
+  Future<String> getProperty(String name) => invalidDelay && name == 'sub-delay'
+      ? Future.value('unavailable')
+      : super.getProperty(name);
+}
+
+class BlockingDelayBackend extends RecordingBackend {
+  final firstCommand = Completer<void>();
+  var started = 0;
+
+  @override
+  Future<void> command(List<String> arguments) async {
+    started++;
+    if (started == 1) await firstCommand.future;
+    await super.command(arguments);
   }
 }
 
@@ -137,7 +163,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
     await tester.pump();
     expect(backend.commands.last, ['add', 'sub-delay', '0.1']);
-    expect(find.text('Ritardo sottotitoli +0,1 s'), findsOneWidget);
+    expect(find.text('Ritardo sottotitoli primari +0,1 s'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 1100));
     expect(find.byKey(const ValueKey('shortcut-feedback')), findsOneWidget);
 
@@ -161,6 +187,116 @@ void main() {
       find.textContaining('Errore: Bad state: command failed'),
       findsOneWidget,
     );
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('subtitle delay shortcuts show the accumulated primary value', (
+    tester,
+  ) async {
+    final backend = RecordingBackend()
+      ..properties['sub-delay'] = '0.35'
+      ..properties['secondary-sub-delay'] = '1.2';
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(backend),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,45 s'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,55 s'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,45 s'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyQ);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,35 s'), findsOneWidget);
+    expect(backend.properties['secondary-sub-delay'], '1.2');
+
+    backend.properties['sub-delay'] = '-0.3';
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyQ);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari −0,4 s'), findsOneWidget);
+    backend.properties['sub-delay'] = '-0.1';
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,0 s'), findsOneWidget);
+    backend.invalidDelay = true;
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.pump();
+    await tester.pump();
+    expect(
+      find.textContaining('Ritardo sottotitoli non valido'),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('subtitle menu applies the same accumulated delay feedback', (
+    tester,
+  ) async {
+    final backend = RecordingBackend()..properties['sub-delay'] = '0.2';
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(backend),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      const Offset(250, 200),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sottotitoli'));
+    await tester.pumpAndSettle();
+    expect(find.text('Z / Q'), findsOneWidget);
+    expect(find.text('X / W'), findsOneWidget);
+    await tester.tap(find.text('Ritardo sottotitoli primari −0,1 s'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Ritardo sottotitoli primari +0,1 s'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('rapid subtitle delay adjustments are processed in order', (
+    tester,
+  ) async {
+    final backend = BlockingDelayBackend();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(backend),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.pump();
+    expect(backend.started, 1);
+    backend.firstCommand.complete();
+    await tester.pump();
+    await tester.pump();
+    expect(backend.commands.length, 2);
+    expect(find.text('Ritardo sottotitoli primari +0,2 s'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
   });
 
