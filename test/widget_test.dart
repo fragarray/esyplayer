@@ -69,7 +69,7 @@ void main() {
     expect(find.byTooltip('Elemento precedente'), findsOneWidget);
     expect(find.byTooltip('Elemento successivo'), findsOneWidget);
     expect(find.byTooltip('Schermo intero'), findsOneWidget);
-    expect(find.text('00:00:00 / 00:00:00'), findsOneWidget);
+    expect(find.text('00:00 / 00:00'), findsOneWidget);
   });
 
   testWidgets('track menus list and select available media tracks', (
