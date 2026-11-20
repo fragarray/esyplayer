@@ -72,4 +72,36 @@ void main() {
       controller.dispose();
     },
   );
+
+  test(
+    'changing subtitle border refreshes active tracks without losing them',
+    () async {
+      final backend = _OrderedBackend()
+        ..properties['sid'] = '2'
+        ..properties['secondary-sid'] = '3';
+      final controller = PlayerController(backend);
+      final preferences = Map<String, String>.of(
+        AppSettings.subtitlePreferenceDefaults,
+      )..['sub-border-style'] = 'opaque-box';
+
+      await controller.applySubtitlePreferences(
+        preferences,
+        refreshActiveTracks: true,
+      );
+
+      expect(backend.properties['options/sub-border-style'], 'opaque-box');
+      expect(backend.properties['sid'], '2');
+      expect(backend.properties['secondary-sid'], '3');
+      expect(
+        backend.operations,
+        containsAllInOrder([
+          'property:sid',
+          'property:secondary-sid',
+          'property:sid',
+          'property:secondary-sid',
+        ]),
+      );
+      controller.dispose();
+    },
+  );
 }

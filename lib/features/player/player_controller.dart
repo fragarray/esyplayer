@@ -90,7 +90,10 @@ class PlayerController extends ChangeNotifier {
   Future<void> setProperty(String name, String value) =>
       backend.setProperty(name, value);
 
-  Future<void> applySubtitlePreferences(Map<String, String> preferences) async {
+  Future<void> applySubtitlePreferences(
+    Map<String, String> preferences, {
+    bool refreshActiveTracks = false,
+  }) async {
     const overrideKeys = ['sub-ass-override', 'secondary-sub-ass-override'];
     for (final key in overrideKeys) {
       final value = preferences[key];
@@ -102,6 +105,30 @@ class PlayerController extends ChangeNotifier {
       if (!overrideKeys.contains(entry.key)) {
         await backend.setProperty('options/${entry.key}', entry.value);
       }
+    }
+    if (refreshActiveTracks) {
+      await _refreshActiveSubtitleTracks();
+    }
+  }
+
+  Future<void> _refreshActiveSubtitleTracks() async {
+    final primaryTrack = await backend.getProperty('sid');
+    final secondaryTrack = await backend.getProperty('secondary-sid');
+    final hasPrimaryTrack = primaryTrack.isNotEmpty && primaryTrack != 'no';
+    final hasSecondaryTrack =
+        secondaryTrack.isNotEmpty && secondaryTrack != 'no';
+
+    if (hasPrimaryTrack) {
+      await backend.setProperty('sid', 'no');
+    }
+    if (hasSecondaryTrack) {
+      await backend.setProperty('secondary-sid', 'no');
+    }
+    if (hasPrimaryTrack) {
+      await backend.setProperty('sid', primaryTrack);
+    }
+    if (hasSecondaryTrack) {
+      await backend.setProperty('secondary-sid', secondaryTrack);
     }
   }
 

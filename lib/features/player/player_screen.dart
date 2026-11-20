@@ -560,7 +560,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return;
     }
 
-    await controller.applySubtitlePreferences(values);
+    final borderStyleChanged =
+        values['sub-border-style'] != currentValues['sub-border-style'] ||
+        values['sub-ass-override'] != currentValues['sub-ass-override'];
+    await controller.applySubtitlePreferences(
+      values,
+      refreshActiveTracks: borderStyleChanged,
+    );
     await settings.setSubtitlePreferences(values);
   }
 
