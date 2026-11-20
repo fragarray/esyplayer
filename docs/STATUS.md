@@ -17,6 +17,7 @@
 - Persistent subtitle font, size, color, outline, margins, alignment, encoding,
   delay, and primary/secondary positioning preferences
 - A-B loop property control
+- Native libass subtitle rendering with a single bottom playback toolbar
 - Raw mpv property dialog and command actions
 - Screenshot and frame-step commands
 - Media info and stats command actions

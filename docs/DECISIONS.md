@@ -25,3 +25,6 @@
 - 2026-11-21: Audio and subtitle track menus are populated from media_kit's
   available-track stream, keeping track discovery inside the playback backend
   and allowing external subtitle tracks to appear as mpv reports them.
+- 2026-11-21: Use native libass subtitle rendering so mpv style preferences do
+  not overlap media_kit's Flutter subtitle overlay. Disable media_kit's in-video
+  controls and keep all playback controls in the persistent bottom toolbar.

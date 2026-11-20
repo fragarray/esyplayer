@@ -68,6 +68,9 @@ can place EsyPlayer in Program Files and register file associations.
 - Some mpv features depend on the mpv/libmpv build shipped with the operating
   system or bundled by the media_kit native libraries.
 - Hardware decoding choices are passed to mpv and may vary by GPU and driver.
+- Subtitles are rendered by mpv/libass to apply the selected style once; the
+  in-video subtitle widget and controls are disabled to prevent duplicate
+  overlays.
 - Subtitle appearance and encoding options are persisted. mpv does not expose
   independent fonts, colors, or borders for secondary subtitles; the secondary
   track shares the primary style, but supports separate position, scale, delay,

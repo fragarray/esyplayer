@@ -7,7 +7,7 @@ import 'player_backend.dart';
 
 class MpvBackend implements PlayerBackend {
   MpvBackend() {
-    _player = Player();
+    _player = Player(configuration: const PlayerConfiguration(libass: true));
     _videoController = VideoController(_player);
   }
 

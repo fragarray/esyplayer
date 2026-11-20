@@ -51,6 +51,27 @@ void main() {
     await gesture.up();
   });
 
+  testWidgets('playback controls are confined to the bottom toolbar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(FakeBackend()),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+
+    expect(find.byTooltip('Stop'), findsOneWidget);
+    expect(find.byTooltip('Elemento precedente'), findsOneWidget);
+    expect(find.byTooltip('Elemento successivo'), findsOneWidget);
+    expect(find.byTooltip('Schermo intero'), findsOneWidget);
+    expect(find.text('00:00:00 / 00:00:00'), findsOneWidget);
+  });
+
   testWidgets('track menus list and select available media tracks', (
     tester,
   ) async {

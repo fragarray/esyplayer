@@ -668,12 +668,8 @@ class PlayerScreen extends ConsumerWidget {
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;
     final seconds = totalSeconds % 60;
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:'
-          '${minutes.toString().padLeft(2, '0')}:'
-          '${seconds.toString().padLeft(2, '0')}';
-    }
-    return '${minutes.toString().padLeft(2, '0')}:'
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
   }
 
@@ -686,6 +682,7 @@ class PlayerScreen extends ConsumerWidget {
     final positionSeconds = controller.position.inMilliseconds / 1000;
     final double seekMax = durationSeconds > 0 ? durationSeconds : 1;
     final seekValue = positionSeconds.clamp(0, seekMax).toDouble();
+    final window = WindowManager.instance.getCurrent();
     final playerBody = Column(
       children: [
         Expanded(
@@ -698,54 +695,154 @@ class PlayerScreen extends ConsumerWidget {
                       style: TextStyle(color: Colors.white),
                     ),
                   )
-                : Video(controller: videoController),
+                : Video(controller: videoController, controls: NoVideoControls),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Text(_format(controller.position)),
-              Expanded(
-                child: Slider(
-                  value: seekValue,
-                  min: 0,
-                  max: seekMax,
-                  label: _format(Duration(seconds: seekValue.round())),
-                  onChanged: (value) =>
-                      controller.seek(Duration(seconds: value.round())),
-                ),
-              ),
-              Text(_format(controller.duration)),
-            ],
+        Container(
+          height: 62,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF829099), Color(0xFF56636B), Color(0xFF344149)],
+            ),
+            border: Border(top: BorderSide(color: Colors.white38)),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               IconButton(
                 tooltip: controller.isPlaying ? 'Pausa' : 'Riproduci',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x33232C31),
+                  minimumSize: const Size(40, 40),
+                ),
                 onPressed: controller.playOrPause,
                 icon: Icon(
                   controller.isPlaying ? Icons.pause : Icons.play_arrow,
+                  size: 25,
                 ),
+              ),
+              IconButton(
+                tooltip: 'Stop',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x33232C31),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: controller.stop,
+                icon: const Icon(Icons.stop, size: 24),
+              ),
+              IconButton(
+                tooltip: 'Elemento precedente',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x33232C31),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: controller.previous,
+                icon: const Icon(Icons.skip_previous, size: 24),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 3,
+                    activeTrackColor: const Color(0xFFB7E3FF),
+                    inactiveTrackColor: Colors.white38,
+                    thumbColor: Colors.white,
+                    overlayColor: Colors.white24,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 12,
+                    ),
+                  ),
+                  child: Slider(
+                    value: seekValue,
+                    min: 0,
+                    max: seekMax,
+                    label: _format(Duration(seconds: seekValue.round())),
+                    onChanged: (value) =>
+                        controller.seek(Duration(seconds: value.round())),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Elemento successivo',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x33232C31),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: controller.next,
+                icon: const Icon(Icons.skip_next, size: 24),
+              ),
+              IconButton(
+                tooltip: 'Schermo intero',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x33232C31),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: window == null
+                    ? null
+                    : () => window.isFullScreen = !window.isFullScreen,
+                icon: const Icon(Icons.fullscreen, size: 24),
               ),
               IconButton(
                 tooltip: controller.isMuted
                     ? 'Attiva audio'
                     : 'Disattiva audio',
+                visualDensity: VisualDensity.compact,
+                color: Colors.white,
                 onPressed: controller.toggleMute,
                 icon: Icon(
                   controller.isMuted ? Icons.volume_off : Icons.volume_up,
+                  size: 22,
                 ),
               ),
-              Expanded(
-                child: Slider(
-                  value: controller.volume.clamp(0, 200).toDouble(),
-                  min: 0,
-                  max: 200,
-                  onChanged: (value) => controller.setVolume(value),
+              SizedBox(
+                width: 82,
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 3,
+                    activeTrackColor: Colors.white,
+                    inactiveTrackColor: Colors.white38,
+                    thumbColor: Colors.white,
+                    overlayColor: Colors.white24,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 10,
+                    ),
+                  ),
+                  child: Slider(
+                    value: controller.volume.clamp(0, 200).toDouble(),
+                    min: 0,
+                    max: 200,
+                    onChanged: controller.setVolume,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${_format(controller.position)} / '
+                '${_format(controller.duration)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

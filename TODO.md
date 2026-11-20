@@ -24,6 +24,7 @@
 - [x] Keyboard shortcuts
 - [x] Drag-and-drop
 - [x] Open file, folder, URL
+- [x] Use native libass rendering and a single bottom playback toolbar
 
 ## Milestone 4 - Library
 
