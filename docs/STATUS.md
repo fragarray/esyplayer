@@ -14,12 +14,14 @@
 - Keyboard play/pause and seek shortcuts
 - Drift storage for recent files, resume positions, and named playlists
 - Context-menu recent-files submenu capped at six items
+- Compact context-menu rows with side-opening, bounds-aware submenus
 - M3U load/save helpers
 - Nested audio and primary/secondary subtitle menus list available media tracks
 - External subtitle loading
 - Persistent subtitle font, size, color, outline, margins, alignment, encoding,
   delay, and primary/secondary positioning preferences
-- Subtitle preference reset action and ASS border-style override
+- Subtitle preference reset action and ASS border-style override, including a
+  migration from the old ASS override default
 - A-B loop property control
 - Native libass subtitle rendering with a single bottom playback toolbar
 - Raw mpv property dialog and command actions

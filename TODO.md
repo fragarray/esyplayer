@@ -67,9 +67,12 @@
 - [x] Show up to six recent files in the Open submenu
 - [x] Reset subtitle preferences and force ASS style override when changing
   border style
+- [x] Apply ASS override before border settings and migrate the old default
+  for existing subtitle preferences
 - [x] Toggle fullscreen with video double-click and auto-hide the bottom
   controls after two seconds
-- [x] Align submenus with their trigger row and open the context menu at the pointer
+- [x] Open compact submenus beside their parent, flip within window bounds, and
+  align an entry with the trigger click
 - [x] Stats overlay
 - [x] Media info dialog
 - [x] Raw mpv command palette

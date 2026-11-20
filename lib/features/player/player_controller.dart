@@ -57,9 +57,7 @@ class PlayerController extends ChangeNotifier {
         await settings?.getSubtitlePreferences() ??
         AppSettings.subtitlePreferenceDefaults;
     await backend.open(source);
-    for (final entry in subtitlePreferences.entries) {
-      await backend.setProperty(entry.key, entry.value);
-    }
+    await applySubtitlePreferences(subtitlePreferences);
     final resume = await database?.resumePosition(source);
     if (resume != null && resume > Duration.zero) {
       await backend.seek(resume);
@@ -91,6 +89,22 @@ class PlayerController extends ChangeNotifier {
   Future<void> setABLoop(bool enabled) => backend.setABLoop(enabled);
   Future<void> setProperty(String name, String value) =>
       backend.setProperty(name, value);
+
+  Future<void> applySubtitlePreferences(Map<String, String> preferences) async {
+    const overrideKeys = ['sub-ass-override', 'secondary-sub-ass-override'];
+    for (final key in overrideKeys) {
+      final value = preferences[key];
+      if (value != null) {
+        await backend.setProperty(key, value);
+      }
+    }
+    for (final entry in preferences.entries) {
+      if (!overrideKeys.contains(entry.key)) {
+        await backend.setProperty(entry.key, entry.value);
+      }
+    }
+  }
+
   Future<String> getProperty(String name) => backend.getProperty(name);
   Future<void> command(List<String> arguments) => backend.command(arguments);
 

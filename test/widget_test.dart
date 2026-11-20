@@ -100,7 +100,30 @@ void main() {
       buttons: kSecondaryMouseButton,
     );
     await tester.pumpAndSettle();
-    final triggerCenterY = tester.getCenter(find.text('Video')).dy;
+    final triggerItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Video'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    final openItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Apri'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    final optionsItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Opzioni'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    final mainMenu = Rect.fromLTRB(
+      openItem.left,
+      openItem.top,
+      openItem.right,
+      optionsItem.bottom,
+    );
     await tester.tap(find.text('Video'));
     await tester.pumpAndSettle();
 
@@ -116,8 +139,81 @@ void main() {
         matching: find.byType(MenuItemButton),
       ),
     );
-    expect(triggerCenterY, greaterThanOrEqualTo(firstItem.top));
-    expect(triggerCenterY, lessThanOrEqualTo(lastItem.bottom));
+    expect(
+      firstItem.top <= triggerItem.center.dy &&
+          triggerItem.center.dy <= firstItem.bottom,
+      isTrue,
+    );
+    expect(triggerItem.center.dy, lessThanOrEqualTo(lastItem.bottom));
+    expect(
+      firstItem.left >= mainMenu.right || lastItem.right <= mainMenu.left,
+      isTrue,
+    );
+    expect(firstItem.height, lessThan(48));
+    expect(triggerItem.height, lessThan(48));
+
+    await gesture.up();
+  });
+
+  testWidgets('submenus flip to the free side at the window edge', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playerControllerProvider.overrideWith(
+            (ref) => PlayerController(FakeBackend()),
+          ),
+        ],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      const Offset(996, 350),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+
+    final openItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Apri'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    final optionsItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Opzioni'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    final videoItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Video'),
+        matching: find.byType(SubmenuButton),
+      ),
+    );
+    await tester.tap(find.text('Video'));
+    await tester.pumpAndSettle();
+
+    final lastItem = tester.getRect(
+      find.ancestor(
+        of: find.text('Proprietà e filtri video…'),
+        matching: find.byType(MenuItemButton),
+      ),
+    );
+    expect(openItem.left, greaterThanOrEqualTo(0));
+    expect(optionsItem.right, lessThanOrEqualTo(1000));
+    expect(videoItem.top, greaterThanOrEqualTo(0));
+    expect(videoItem.bottom, lessThanOrEqualTo(700));
+    expect(lastItem.right, lessThanOrEqualTo(openItem.left));
+    expect(lastItem.bottom, lessThanOrEqualTo(700));
 
     await gesture.up();
   });

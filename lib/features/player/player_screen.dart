@@ -28,6 +28,23 @@ class PlayerScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayerScreenState extends ConsumerState<PlayerScreen> {
+  static const _menuButtonStyle = ButtonStyle(
+    minimumSize: WidgetStatePropertyAll(Size(0, 38)),
+    padding: WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    ),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
+  static const _rootMenuStyle = MenuStyle(
+    padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
+    visualDensity: VisualDensity.compact,
+  );
+  static const _submenuMenuStyle = MenuStyle(
+    alignment: AlignmentDirectional.centerEnd,
+    padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
+    visualDensity: VisualDensity.compact,
+  );
+
   final List<String> _recentFilePaths = [];
   Timer? _controlsTimer;
   nativeapi.Window? _window;
@@ -244,6 +261,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return [
         const MenuItemButton(
           onPressed: null,
+          style: _menuButtonStyle,
           child: Text('Nessuna traccia disponibile'),
         ),
       ];
@@ -251,6 +269,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     return [
       for (final track in tracks)
         MenuItemButton(
+          style: _menuButtonStyle,
           onPressed: () => controller.setAudioTrack(track.id),
           child: Text(
             _trackLabel(
@@ -274,6 +293,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return [
         const MenuItemButton(
           onPressed: null,
+          style: _menuButtonStyle,
           child: Text('Nessuna traccia disponibile'),
         ),
       ];
@@ -281,6 +301,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     return [
       for (final track in tracks)
         MenuItemButton(
+          style: _menuButtonStyle,
           onPressed: () => secondary
               ? controller.setSecondarySubtitleTrack(track.id)
               : controller.setSubtitleTrack(track.id),
@@ -518,9 +539,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return;
     }
 
-    for (final entry in values.entries) {
-      await controller.setProperty(entry.key, entry.value);
-    }
+    await controller.applySubtitlePreferences(values);
     await settings.setSubtitlePreferences(values);
   }
 
@@ -532,14 +551,20 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final window = WindowManager.instance.getCurrent();
     final currentSource = controller.currentSource;
     MenuItemButton item(String label, VoidCallback? onPressed) =>
-        MenuItemButton(onPressed: onPressed, child: Text(label));
+        MenuItemButton(
+          style: _menuButtonStyle,
+          onPressed: onPressed,
+          child: Text(label),
+        );
     SubmenuButton submenu(
       String label,
       List<Widget> children, {
       VoidCallback? onOpen,
     }) => SubmenuButton(
       menuChildren: children,
-      menuStyle: const MenuStyle(alignment: AlignmentDirectional.centerStart),
+      style: _menuButtonStyle,
+      menuStyle: _submenuMenuStyle,
+      alignmentOffset: const Offset(0, -19),
       onOpen: onOpen,
       child: Text(label),
     );
@@ -553,6 +578,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         : [
             for (final path in _recentFilePaths.take(6))
               MenuItemButton(
+                style: _menuButtonStyle,
                 onPressed: () => controller.open(path),
                 child: Tooltip(
                   message: path,
@@ -956,6 +982,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           autofocus: true,
           child: Scaffold(
             body: MenuAnchor(
+              style: _rootMenuStyle,
               menuChildren: _contextMenu(context, ref, controller),
               builder: (context, menuController, child) => Listener(
                 behavior: HitTestBehavior.translucent,

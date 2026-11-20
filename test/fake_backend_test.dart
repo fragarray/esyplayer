@@ -42,6 +42,11 @@ void main() {
       expect(backend.properties['sub-pos'], '100');
       expect(backend.properties['secondary-sub-pos'], '0');
       expect(backend.properties['sub-font'], 'Test Font');
+      expect(backend.properties['sub-ass-override'], 'force');
+      expect(backend.properties.keys.take(2).toList(), [
+        'sub-ass-override',
+        'secondary-sub-ass-override',
+      ]);
       controller.dispose();
     },
   );

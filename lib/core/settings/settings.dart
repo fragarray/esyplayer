@@ -13,6 +13,10 @@ class AppSettings implements SubtitlePreferencesStore {
 
   final SharedPreferencesAsync preferences;
 
+  static const _subtitlePreferencesSchemaVersionKey =
+      'subtitle_preferences_schema_version';
+  static const _subtitlePreferencesSchemaVersion = 1;
+
   static const subtitlePreferenceDefaults = <String, String>{
     'sub-pos': '100',
     'secondary-sub-pos': '0',
@@ -39,7 +43,7 @@ class AppSettings implements SubtitlePreferencesStore {
     'secondary-sub-delay': '0',
     'secondary-sub-scale': '1',
     'sub-codepage': 'auto',
-    'sub-ass-override': 'scale',
+    'sub-ass-override': 'force',
     'secondary-sub-ass-override': 'strip',
     'sub-use-margins': 'yes',
     'sub-ass-force-margins': 'no',
@@ -74,17 +78,34 @@ class AppSettings implements SubtitlePreferencesStore {
         values[entry.key] = value;
       }
     }
+    if (await preferences.getInt(_subtitlePreferencesSchemaVersionKey) ==
+        null) {
+      if (values['sub-ass-override'] == 'scale' &&
+          values['sub-border-style'] == 'outline-and-shadow') {
+        values['sub-ass-override'] = 'force';
+        await setSubtitlePreferences(values);
+      } else {
+        await preferences.setInt(
+          _subtitlePreferencesSchemaVersionKey,
+          _subtitlePreferencesSchemaVersion,
+        );
+      }
+    }
     return values;
   }
 
-  Future<void> setSubtitlePreferences(Map<String, String> values) {
+  Future<void> setSubtitlePreferences(Map<String, String> values) async {
     final supportedValues = <String, String>{
       for (final entry in values.entries)
         if (_subtitlePreferenceKeys.contains(entry.key)) entry.key: entry.value,
     };
-    return preferences.setString(
+    await preferences.setString(
       'subtitle_preferences',
       jsonEncode(supportedValues),
+    );
+    await preferences.setInt(
+      _subtitlePreferencesSchemaVersionKey,
+      _subtitlePreferencesSchemaVersion,
     );
   }
 
