@@ -507,6 +507,100 @@ void main() {
     expect(await result, AppSettings.subtitlePreferenceDefaults);
   });
 
+  for (final size in [const Size(1200, 900), const Size(600, 450)]) {
+    testWidgets('subtitle preview stays above settings at $size', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SubtitlePreferencesDialog(
+              initialValues: AppSettings.subtitlePreferenceDefaults,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final preview = find.byKey(const ValueKey('subtitle-preview'));
+      final list = find.byKey(const ValueKey('subtitle-settings-list'));
+      final initialRect = tester.getRect(preview);
+      expect(initialRect.bottom, lessThan(tester.getTopLeft(list).dy));
+      expect(initialRect.center.dx, closeTo(size.width / 2, 4));
+      expect(find.text('Sottotitolo primario'), findsWidgets);
+
+      await tester.tap(find.text('Mostra sottotitoli primari'));
+      await tester.pump();
+      expect(find.text('Sottotitolo primario'), findsNothing);
+      await tester.drag(list, const Offset(0, -700));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(preview), initialRect);
+
+      await tester.tap(find.text('Secondario'));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(preview), initialRect);
+      if (size.height < 500) {
+        await tester.drag(list, const Offset(0, -160));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Mostra seconda traccia'), findsOneWidget);
+      await tester.tap(find.text('Primario'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mostra sottotitoli primari'), findsOneWidget);
+      expect(find.text('Sottotitolo primario'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('subtitle preferences fit a small window with larger text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.3)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: SubtitlePreferencesDialog(
+            initialValues: AppSettings.subtitlePreferenceDefaults,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('subtitle-preview')), findsOneWidget);
+    expect(find.text('Salva'), findsOneWidget);
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('subtitle-settings-list')))
+          .height,
+      greaterThan(0),
+    );
+    final list = find.byKey(const ValueKey('subtitle-settings-list'));
+    for (var i = 0; i < 10; i++) {
+      await tester.drag(list, const Offset(0, -250));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('Secondario'));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(list, const Offset(0, -250));
+      await tester.pumpAndSettle();
+    }
+  });
+
   testWidgets('changing subtitle border forces ASS style overrides', (
     tester,
   ) async {

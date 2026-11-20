@@ -22,6 +22,8 @@ Keyboard shortcuts display brief feedback in the upper-right of the video.
 Ctrl+R and Ctrl+T increase and decrease the primary subtitle scale by 10
 percentage points, respectively; Z and X change subtitle delay by 0.1 seconds.
 These shortcut adjustments apply to the current playback session.
+Subtitle preferences keep a live preview and track selector above the
+scrollable settings; appearance settings are shared by both subtitle tracks.
 
 ## Linux prerequisites
 

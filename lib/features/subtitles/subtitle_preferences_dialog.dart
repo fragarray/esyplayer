@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/settings/settings.dart';
@@ -21,6 +23,7 @@ class SubtitlePreferencesDialog extends StatefulWidget {
 class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   late final Map<String, String> _values;
   final Map<String, TextEditingController> _controllers = {};
+  final ScrollController _scrollController = ScrollController();
   int _tab = 0;
 
   static const _colorPresets = <String>[
@@ -41,6 +44,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     for (final c in _controllers.values) {
       c.dispose();
     }
@@ -98,8 +102,8 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   Widget _section(String title, IconData icon, List<Widget> children) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
@@ -112,18 +116,20 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             children: [
               Icon(icon, size: 20, color: scheme.primary),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: scheme.primary,
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.primary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
+            if (i > 0) const SizedBox(height: 12),
             children[i],
           ],
         ],
@@ -145,7 +151,10 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
         labelText: label,
         hintText: hint,
         prefixIcon: icon == null ? null : Icon(icon, size: 20),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         isDense: true,
       ),
@@ -189,7 +198,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            trackHeight: 3,
+            trackHeight: 4,
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
           ),
           child: Slider(
@@ -229,7 +238,10 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
       decoration: InputDecoration(
         labelText: label,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       items: [
@@ -256,7 +268,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: 8,
+              vertical: 12,
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             errorText: (_values[key] ?? '').isNotEmpty && color == null
@@ -418,7 +430,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
                     'Sottotitolo primario',
                     fontSize:
                         (_num('sub-font-size', 40) * _num('sub-scale', 1) * k)
-                            .clamp(8, 80),
+                            .clamp(14, 80),
                     ax: ax,
                     ay: primaryPos * 2 - 1,
                     marginX: marginX,
@@ -432,7 +444,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
                         (_num('sub-font-size', 40) *
                                 _num('secondary-sub-scale', 1) *
                                 k)
-                            .clamp(8, 80),
+                            .clamp(14, 80),
                     ax: ax,
                     ay: secondaryPos * 2 - 1,
                     marginX: marginX,
@@ -700,15 +712,24 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
           ),
         ],
         selected: {_tab},
-        onSelectionChanged: (s) => setState(() => _tab = s.first),
+        onSelectionChanged: (s) {
+          if (_scrollController.hasClients) _scrollController.jumpTo(0);
+          setState(() => _tab = s.first);
+        },
       ),
     );
   }
 
   Widget _settingsList() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(4, 4, 8, 8),
-      children: _tab == 0 ? _primarySections() : _secondarySections(),
+    return Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: true,
+      child: ListView(
+        key: const ValueKey('subtitle-settings-list'),
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(4, 8, 16, 8),
+        children: _tab == 0 ? _primarySections() : _secondarySections(),
+      ),
     );
   }
 
@@ -718,35 +739,6 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final size = MediaQuery.sizeOf(context);
-    final wide = size.width >= 820;
-
-    final body = wide
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 292,
-                child: Column(
-                  children: [
-                    _preview(),
-                    const SizedBox(height: 8),
-                    _tabSelector(),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: _settingsList()),
-            ],
-          )
-        : Column(
-            children: [
-              _preview(),
-              const SizedBox(height: 8),
-              _tabSelector(),
-              const SizedBox(height: 4),
-              Expanded(child: _settingsList()),
-            ],
-          );
 
     return Dialog(
       insetPadding: const EdgeInsets.all(14),
@@ -754,8 +746,8 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 960,
-          maxHeight: (size.height - 28).clamp(400, 760),
+          maxWidth: 760,
+          maxHeight: math.min(math.max(0, size.height - 28), 760),
         ),
         child: Column(
           children: [
@@ -767,7 +759,9 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Preferenze sottotitoli',
+                      size.width < 500
+                          ? 'Sottotitoli'
+                          : 'Preferenze sottotitoli',
                       style: Theme.of(context).textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
@@ -783,26 +777,61 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             const Divider(height: 1),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
-                child: body,
+                padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final previewHeight = math.min(
+                      220.0,
+                      constraints.maxHeight * 0.32,
+                    );
+                    final previewWidth = math.min(
+                      constraints.maxWidth,
+                      previewHeight * 16 / 9,
+                    );
+                    return Column(
+                      children: [
+                        Center(
+                          child: SizedBox(
+                            key: const ValueKey('subtitle-preview'),
+                            width: previewWidth,
+                            child: _preview(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _tabSelector(),
+                        const SizedBox(height: 4),
+                        Expanded(child: _settingsList()),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  TextButton.icon(
-                    onPressed: _resetToDefaults,
-                    icon: const Icon(Icons.restore_rounded),
-                    label: const Text('Ripristina predefinite'),
-                  ),
-                  const Spacer(),
+                  if (size.width < 500)
+                    IconButton(
+                      tooltip: 'Ripristina predefinite',
+                      onPressed: _resetToDefaults,
+                      icon: const Icon(Icons.restore_rounded),
+                    )
+                  else
+                    TextButton.icon(
+                      onPressed: _resetToDefaults,
+                      icon: const Icon(Icons.restore_rounded),
+                      label: const Text('Ripristina predefinite'),
+                    ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Annulla'),
                   ),
-                  const SizedBox(width: 8),
                   FilledButton.icon(
                     onPressed: () => Navigator.pop(context, _values),
                     icon: const Icon(Icons.check_rounded),

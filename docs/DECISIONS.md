@@ -58,3 +58,6 @@
   is replaced by the next shortcut. Ctrl+R/T adjust the primary subtitle scale
   by 0.1 through the backend; these changes are not persisted as preferences.
   Outside clicks dismiss the context-menu chain, whose rows are 30 pixels high.
+- Subtitle preferences use a centered preview and track selector fixed above a
+  scrollable, grouped settings list. The preview scales with available dialog
+  space, while switching tracks returns the settings list to its beginning.
