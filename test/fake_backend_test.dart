@@ -55,15 +55,19 @@ void main() {
 
       await controller.open('test://media');
 
-      expect(backend.operations.first, 'property:sub-ass-override');
+      expect(backend.operations.first, 'property:options/sub-ass-override');
       expect(backend.operations.last, 'open');
-      expect(backend.properties['sub-pos'], '100');
-      expect(backend.properties['secondary-sub-pos'], '0');
-      expect(backend.properties['sub-font'], 'Test Font');
-      expect(backend.properties['sub-ass-override'], 'force');
+      expect(backend.properties['options/sub-pos'], '100');
+      expect(backend.properties['options/secondary-sub-pos'], '0');
+      expect(backend.properties['options/sub-font'], 'Test Font');
+      expect(
+        backend.properties['options/sub-border-style'],
+        'outline-and-shadow',
+      );
+      expect(backend.properties['options/sub-ass-override'], 'force');
       expect(backend.properties.keys.take(2).toList(), [
-        'sub-ass-override',
-        'secondary-sub-ass-override',
+        'options/sub-ass-override',
+        'options/secondary-sub-ass-override',
       ]);
       controller.dispose();
     },

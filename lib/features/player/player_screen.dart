@@ -54,6 +54,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   String? _recentFilesError;
   bool _isFullScreen = false;
   bool _controlsVisible = true;
+  bool _controlsHovered = false;
   bool _recentFilesLoading = false;
 
   @override
@@ -83,6 +84,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return;
     }
     _controlsTimer?.cancel();
+    _controlsHovered = false;
     setState(() {
       _isFullScreen = value;
       _controlsVisible = true;
@@ -94,8 +96,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   void _scheduleControlsHide() {
     _controlsTimer?.cancel();
+    if (_controlsHovered) {
+      return;
+    }
     _controlsTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted && _isFullScreen) {
+      if (mounted && _isFullScreen && !_controlsHovered) {
         setState(() => _controlsVisible = false);
       }
     });
@@ -105,11 +110,25 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     if (!_isFullScreen) {
       return;
     }
-    _controlsTimer?.cancel();
     if (!_controlsVisible) {
       setState(() => _controlsVisible = true);
     }
     _scheduleControlsHide();
+  }
+
+  void _setControlsHovered(bool value) {
+    if (!_isFullScreen) {
+      return;
+    }
+    _controlsHovered = value;
+    _controlsTimer?.cancel();
+    if (value) {
+      if (!_controlsVisible) {
+        setState(() => _controlsVisible = true);
+      }
+    } else {
+      _scheduleControlsHide();
+    }
   }
 
   void _toggleFullScreen() {
@@ -862,7 +881,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             : Video(controller: videoController, controls: NoVideoControls),
       ),
     );
-    final controls = Padding(
+    final theme = Theme.of(context);
+    final controls = Container(
+      key: const ValueKey('playback-toolbar'),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border.all(color: theme.colorScheme.primary, width: 1.5),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
@@ -907,7 +932,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             icon: Icon(controller.isMuted ? Icons.volume_off : Icons.volume_up),
           ),
           SizedBox(
-            width: 82,
+            width: 164,
             child: Slider(
               value: controller.volume.clamp(0, 200).toDouble(),
               min: 0,
@@ -941,7 +966,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     child: AnimatedOpacity(
                       opacity: _controlsVisible ? 1 : 0,
                       duration: const Duration(milliseconds: 200),
-                      child: controls,
+                      child: MouseRegion(
+                        onEnter: (_) => _setControlsHovered(true),
+                        onExit: (_) => _setControlsHovered(false),
+                        child: controls,
+                      ),
                     ),
                   ),
                 ),
@@ -1095,7 +1124,7 @@ class _PositionedSubmenuState extends State<_PositionedSubmenu> {
             style: _menuButtonStyle,
             onPressed: () =>
                 _open(controller, _pointerPosition ?? _centerPosition()),
-            trailingIcon: const Icon(Icons.chevron_right, size: 18),
+            trailingIcon: const Icon(Icons.arrow_right, size: 22),
             child: Text(widget.label),
           ),
         ),

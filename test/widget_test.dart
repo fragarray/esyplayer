@@ -45,6 +45,7 @@ void main() {
     expect(find.text('Apri'), findsOneWidget);
     expect(find.text('Video'), findsOneWidget);
     expect(find.text('Opzioni'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_right), findsWidgets);
 
     await tester.tap(find.text('Opzioni'));
     await tester.pumpAndSettle();
@@ -77,6 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nessun file recente'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_right), findsWidgets);
     await gesture.up();
   });
 
@@ -235,6 +237,21 @@ void main() {
     expect(find.byTooltip('Elemento successivo'), findsOneWidget);
     expect(find.byTooltip('Schermo intero'), findsOneWidget);
     expect(find.text('00:00 / 00:00'), findsOneWidget);
+
+    final toolbar = find.byKey(const ValueKey('playback-toolbar'));
+    final theme = Theme.of(tester.element(toolbar));
+    final decoration =
+        tester.widget<Container>(toolbar).decoration! as BoxDecoration;
+    expect(decoration.color!.a, 1);
+    final border = decoration.border! as Border;
+    expect(border.top.color, theme.colorScheme.primary);
+    expect(border.left.color, theme.colorScheme.primary);
+    expect(border.right.color, theme.colorScheme.primary);
+    expect(border.bottom.color, theme.colorScheme.primary);
+    expect(
+      tester.getSize(find.byType(Slider).last).width,
+      greaterThanOrEqualTo(164),
+    );
   });
 
   testWidgets('track menus list and select available media tracks', (

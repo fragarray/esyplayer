@@ -71,10 +71,13 @@
   for existing subtitle preferences
 - [x] Apply subtitle properties before loading a file so libass initializes
   tracks with the selected style
+- [x] Set subtitle options through mpv's `options/<name>` property namespace
 - [x] Toggle fullscreen with video double-click and auto-hide the bottom
   controls after two seconds
 - [x] Keep fullscreen controls at full-width bottom position and intrinsic
   toolbar height while they are visible
+- [x] Keep fullscreen toolbar opaque and visible while hovered; use a theme
+  border, a doubled volume slider, and submenu triangle indicators
 - [x] Open compact submenus beside their parent, flip within window bounds, and
   align an entry with the trigger click's vertical coordinate
 - [x] Stats overlay

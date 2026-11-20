@@ -45,3 +45,6 @@
   last entry instead when needed to keep an entry reachable near the bottom
   edge. Anchor fullscreen controls to the full-width bottom edge with only
   their intrinsic height before sliding them away.
+- Set subtitle option values through mpv's `options/<name>` properties,
+  including ASS override and border style; keep the fullscreen toolbar opaque
+  with a theme-colored border, and pause its hide timer while hovered.

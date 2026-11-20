@@ -95,12 +95,12 @@ class PlayerController extends ChangeNotifier {
     for (final key in overrideKeys) {
       final value = preferences[key];
       if (value != null) {
-        await backend.setProperty(key, value);
+        await backend.setProperty('options/$key', value);
       }
     }
     for (final entry in preferences.entries) {
       if (!overrideKeys.contains(entry.key)) {
-        await backend.setProperty(entry.key, entry.value);
+        await backend.setProperty('options/${entry.key}', entry.value);
       }
     }
   }
