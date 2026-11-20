@@ -37,3 +37,4 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter build windows
+      - run: .\test\verify_windows_libmpv.ps1

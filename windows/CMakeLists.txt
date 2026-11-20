@@ -57,6 +57,52 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# The media_kit Windows package bundles mpv 0.36, which cannot adjust the
+# secondary subtitle delay independently. Use a pinned x86-64 libmpv build.
+set(ESY_LIBMPV_ARCHIVE "mpv-dev-x86_64-20261111-git-bcde6b93cc.7z")
+set(ESY_LIBMPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20261111/${ESY_LIBMPV_ARCHIVE}")
+set(ESY_LIBMPV_SHA256 "273c079b11ea5575822f972756f4c9a71149a5c10130353abeb8586738938452")
+set(ESY_LIBMPV_DLL_SHA256 "88504ee5560942a955405e99dfb5971368e4cf851321f36565bf2a667271db1b")
+set(ESY_LIBMPV_DIR "${CMAKE_BINARY_DIR}/esyplayer-libmpv-bcde6b93cc")
+set(ESY_LIBMPV_FILE "${ESY_LIBMPV_DIR}/libmpv-2.dll")
+set(ESY_LIBMPV_DOWNLOAD "${CMAKE_BINARY_DIR}/${ESY_LIBMPV_ARCHIVE}")
+
+if(NOT EXISTS "${ESY_LIBMPV_FILE}")
+  file(DOWNLOAD "${ESY_LIBMPV_URL}" "${ESY_LIBMPV_DOWNLOAD}"
+    EXPECTED_HASH "SHA256=${ESY_LIBMPV_SHA256}"
+    TLS_VERIFY ON
+    STATUS ESY_LIBMPV_DOWNLOAD_STATUS)
+  list(GET ESY_LIBMPV_DOWNLOAD_STATUS 0 ESY_LIBMPV_DOWNLOAD_CODE)
+  if(NOT ESY_LIBMPV_DOWNLOAD_CODE EQUAL 0)
+    message(FATAL_ERROR "Could not download libmpv: ${ESY_LIBMPV_DOWNLOAD_STATUS}")
+  endif()
+  file(MAKE_DIRECTORY "${ESY_LIBMPV_DIR}")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E tar xf "${ESY_LIBMPV_DOWNLOAD}" libmpv-2.dll
+    WORKING_DIRECTORY "${ESY_LIBMPV_DIR}"
+    RESULT_VARIABLE ESY_LIBMPV_EXTRACT_RESULT)
+  if(NOT ESY_LIBMPV_EXTRACT_RESULT EQUAL 0 OR NOT EXISTS "${ESY_LIBMPV_FILE}")
+    message(FATAL_ERROR "Could not extract libmpv from ${ESY_LIBMPV_ARCHIVE}")
+  endif()
+endif()
+
+file(SHA256 "${ESY_LIBMPV_FILE}" ESY_LIBMPV_ACTUAL_SHA256)
+if(NOT ESY_LIBMPV_ACTUAL_SHA256 STREQUAL ESY_LIBMPV_DLL_SHA256)
+  message(FATAL_ERROR "Unexpected libmpv DLL checksum: ${ESY_LIBMPV_ACTUAL_SHA256}")
+endif()
+
+set(ESY_LIBMPV_REPLACED FALSE)
+foreach(LIBRARY IN LISTS PLUGIN_BUNDLED_LIBRARIES)
+  get_filename_component(LIBRARY_NAME "${LIBRARY}" NAME)
+  if(LIBRARY_NAME STREQUAL "libmpv-2.dll")
+    list(REMOVE_ITEM PLUGIN_BUNDLED_LIBRARIES "${LIBRARY}")
+    set(ESY_LIBMPV_REPLACED TRUE)
+  endif()
+endforeach()
+if(NOT ESY_LIBMPV_REPLACED)
+  message(FATAL_ERROR "media_kit did not provide the expected libmpv DLL")
+endif()
+list(APPEND PLUGIN_BUNDLED_LIBRARIES "${ESY_LIBMPV_FILE}")
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can

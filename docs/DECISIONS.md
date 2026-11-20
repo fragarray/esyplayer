@@ -65,3 +65,7 @@
   mpv property for accumulated feedback, including changes made elsewhere.
   Menu delay actions use the same path. mpv 0.36 lacks independent secondary
   delay, so report it as unsupported instead of silently changing the primary.
+- On Windows replace media_kit's bundled mpv 0.36 DLL at installation with
+  the SHA-256-pinned, baseline x86-64 shinchiro mpv v0.42 build, preserving
+  the remaining media_kit libraries. CI verifies both subtitle delays using
+  the packaged DLL. Linux continues to use the system libmpv.

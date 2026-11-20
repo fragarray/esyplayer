@@ -36,7 +36,12 @@ sudo apt install mpv libmpv-dev
 ## Windows prerequisites
 
 Install a current stable Flutter SDK and Visual Studio Build Tools with the
-Desktop development with C++ workload.
+Desktop development with C++ workload. The Windows build downloads a pinned
+[libmpv build](https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20261111)
+and verifies its SHA-256 checksum. The build scripts are available from the
+[upstream release tag](https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261111);
+the libmpv source is
+[mpv commit bcde6b93cc](https://github.com/mpv-player/mpv/tree/bcde6b93cc).
 
 ## Known limitations
 
@@ -75,9 +80,9 @@ can place EsyPlayer in Program Files and register file associations.
 
 - Some mpv features depend on the mpv/libmpv build shipped with the operating
   system or bundled by the media_kit native libraries.
-- Independent secondary subtitle delay requires mpv 0.38 or newer. The libmpv
-  bundled by `media_kit_libs_windows_video` 1.0.11 is 0.36 and does not support
-  it; Q/W report this limitation rather than changing the primary delay.
+- Independent secondary subtitle delay requires mpv 0.38 or newer. Windows
+  builds use the newer pinned libmpv; on Linux, Q/W report an unsupported
+  version rather than changing the primary delay.
 - Hardware decoding choices are passed to mpv and may vary by GPU and driver.
 - Subtitles are rendered by mpv/libass to apply the selected style once; the
   in-video subtitle widget and controls are disabled to prevent duplicate
