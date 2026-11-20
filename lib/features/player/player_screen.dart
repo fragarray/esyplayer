@@ -169,17 +169,24 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   Future<void> _adjustSubtitleDelay(
     PlayerController controller,
-    int direction,
-  ) {
+    int direction, {
+    bool secondary = false,
+  }) {
     _subtitleDelayQueue = _subtitleDelayQueue.then((_) async {
       if (!mounted) return;
+      final track = secondary ? 'secondari' : 'primari';
       try {
+        final property = secondary ? 'secondary-sub-delay' : 'sub-delay';
+        if (secondary && (await controller.getProperty(property)).isEmpty) {
+          _showFeedback('Ritardo secondario non supportato da mpv');
+          return;
+        }
         await controller.command([
           'add',
-          'sub-delay',
+          property,
           direction < 0 ? '-0.1' : '0.1',
         ]);
-        final rawValue = await controller.getProperty('sub-delay');
+        final rawValue = await controller.getProperty(property);
         final value = double.tryParse(rawValue);
         if (value == null || !value.isFinite) {
           throw FormatException('Ritardo sottotitoli non valido: $rawValue');
@@ -189,10 +196,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         if (formatted.endsWith('.')) formatted += '0';
         final sign = value < 0 && formatted != '0.0' ? '−' : '+';
         _showFeedback(
-          'Ritardo sottotitoli primari $sign${formatted.replaceAll('.', ',')} s',
+          'Ritardo sottotitoli $track $sign${formatted.replaceAll('.', ',')} s',
         );
       } catch (error) {
-        _showFeedback('Errore: $error');
+        _showFeedback('Errore ritardo sottotitoli $track: $error');
       }
     });
     return _subtitleDelayQueue;
@@ -851,12 +858,22 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         item(
           'Ritardo sottotitoli primari −0,1 s',
           () => _adjustSubtitleDelay(controller, -1),
-          shortcut: 'Z / Q',
+          shortcut: 'Z',
         ),
         item(
           'Ritardo sottotitoli primari +0,1 s',
           () => _adjustSubtitleDelay(controller, 1),
-          shortcut: 'X / W',
+          shortcut: 'X',
+        ),
+        item(
+          'Ritardo sottotitoli secondari −0,1 s',
+          () => _adjustSubtitleDelay(controller, -1, secondary: true),
+          shortcut: 'Q',
+        ),
+        item(
+          'Ritardo sottotitoli secondari +0,1 s',
+          () => _adjustSubtitleDelay(controller, 1, secondary: true),
+          shortcut: 'W',
         ),
         submenu('Dimensione', [
           item(
@@ -1233,10 +1250,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           _PlayerAction.subtitleDelayUp,
         ),
         SingleActivator(LogicalKeyboardKey.keyQ): _PlayerActionIntent(
-          _PlayerAction.subtitleDelayDown,
+          _PlayerAction.secondarySubtitleDelayDown,
         ),
         SingleActivator(LogicalKeyboardKey.keyW): _PlayerActionIntent(
-          _PlayerAction.subtitleDelayUp,
+          _PlayerAction.secondarySubtitleDelayUp,
         ),
         SingleActivator(LogicalKeyboardKey.keyR, control: true):
             _PlayerActionIntent(_PlayerAction.subtitleSizeUp),
@@ -1338,6 +1355,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   return _adjustSubtitleDelay(controller, -1);
                 case _PlayerAction.subtitleDelayUp:
                   return _adjustSubtitleDelay(controller, 1);
+                case _PlayerAction.secondarySubtitleDelayDown:
+                  return _adjustSubtitleDelay(controller, -1, secondary: true);
+                case _PlayerAction.secondarySubtitleDelayUp:
+                  return _adjustSubtitleDelay(controller, 1, secondary: true);
                 case _PlayerAction.subtitleSizeDown:
                   return _runShortcut(
                     () => controller.command(['add', 'sub-scale', '-0.1']),
@@ -1502,6 +1523,8 @@ enum _PlayerAction {
   volumeUp,
   subtitleDelayDown,
   subtitleDelayUp,
+  secondarySubtitleDelayDown,
+  secondarySubtitleDelayUp,
   subtitleSizeDown,
   subtitleSizeUp,
 }

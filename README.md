@@ -20,8 +20,9 @@ flutter run -d linux
 Right-click the playback surface to open the grouped command and settings menus.
 Keyboard shortcuts display brief feedback in the upper-right of the video.
 Ctrl+R and Ctrl+T increase and decrease the primary subtitle scale by 10
-percentage points, respectively. Z/Q decrease and X/W increase the primary
-subtitle delay by 0.1 seconds; feedback shows the total delay read from mpv.
+percentage points, respectively. Z/X decrease/increase the primary subtitle
+delay by 0.1 seconds; Q/W do the same for the secondary track when supported.
+Feedback shows the total delay read from mpv.
 These shortcut adjustments apply to the current playback session.
 Subtitle preferences keep a live preview and track selector above the
 scrollable settings; appearance settings are shared by both subtitle tracks.
@@ -74,6 +75,9 @@ can place EsyPlayer in Program Files and register file associations.
 
 - Some mpv features depend on the mpv/libmpv build shipped with the operating
   system or bundled by the media_kit native libraries.
+- Independent secondary subtitle delay requires mpv 0.38 or newer. The libmpv
+  bundled by `media_kit_libs_windows_video` 1.0.11 is 0.36 and does not support
+  it; Q/W report this limitation rather than changing the primary delay.
 - Hardware decoding choices are passed to mpv and may vary by GPU and driver.
 - Subtitles are rendered by mpv/libass to apply the selected style once; the
   in-video subtitle widget and controls are disabled to prevent duplicate

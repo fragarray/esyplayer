@@ -60,7 +60,8 @@
 - Subtitle preferences use a centered preview and track selector fixed above a
   scrollable, grouped settings list. The preview scales with available dialog
   space, while switching tracks returns the settings list to its beginning.
-- Z/X and Q/W both adjust primary subtitle delay, as explicitly requested;
-  Z/Q decrease it and X/W increase it. Queue these operations and read the
-  actual mpv property for the accumulated feedback, including changes made
-  elsewhere. Menu delay actions use the same path.
+- Z/X adjust primary subtitle delay; Q/W adjust the secondary delay, correcting
+  the earlier interpretation. Queue these operations and read the corresponding
+  mpv property for accumulated feedback, including changes made elsewhere.
+  Menu delay actions use the same path. mpv 0.36 lacks independent secondary
+  delay, so report it as unsupported instead of silently changing the primary.
