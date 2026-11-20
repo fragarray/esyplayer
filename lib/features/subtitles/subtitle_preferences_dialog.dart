@@ -98,11 +98,11 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
   Widget _section(String title, IconData icon, List<Widget> children) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: .5)),
       ),
       child: Column(
@@ -111,7 +111,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
           Row(
             children: [
               Icon(icon, size: 20, color: scheme.primary),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -121,9 +121,9 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: 14),
+            if (i > 0) const SizedBox(height: 8),
             children[i],
           ],
         ],
@@ -145,7 +145,8 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
         labelText: label,
         hintText: hint,
         prefixIcon: icon == null ? null : Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         isDense: true,
       ),
       onChanged: (v) => setState(() => _values[key] = v),
@@ -188,8 +189,8 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            trackHeight: 4,
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+            trackHeight: 3,
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
           ),
           child: Slider(
             min: min,
@@ -209,6 +210,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
       child: SwitchListTile(
         contentPadding: EdgeInsets.zero,
         dense: true,
+        visualDensity: VisualDensity.compact,
         title: Text(label),
         subtitle: subtitle == null ? null : Text(subtitle),
         value: _bool(key),
@@ -227,7 +229,8 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
       decoration: InputDecoration(
         labelText: label,
         isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       items: [
         for (final e in options.entries)
@@ -251,7 +254,11 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             labelText: label,
             hintText: '#RRGGBB o #AARRGGBB',
             isDense: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             errorText: (_values[key] ?? '').isNotEmpty && color == null
                 ? 'Formato non valido'
                 : null,
@@ -262,10 +269,10 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
           ),
           onChanged: (v) => setState(() => _values[key] = v),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 5),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 6,
+          runSpacing: 5,
           children: [
             for (final preset in _colorPresets)
               InkWell(
@@ -273,7 +280,7 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
                 onTap: () => _setValue(key, preset),
                 child: _Swatch(
                   color: _parseColor(preset),
-                  size: 26,
+                  size: 22,
                   selected: (_values[key] ?? '').toUpperCase() == preset,
                   accent: scheme.primary,
                 ),
@@ -718,46 +725,46 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 340,
+                width: 292,
                 child: Column(
                   children: [
                     _preview(),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 8),
                     _tabSelector(),
                   ],
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 12),
               Expanded(child: _settingsList()),
             ],
           )
         : Column(
             children: [
               _preview(),
-              const SizedBox(height: 12),
-              _tabSelector(),
               const SizedBox(height: 8),
+              _tabSelector(),
+              const SizedBox(height: 4),
               Expanded(child: _settingsList()),
             ],
           );
 
     return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      insetPadding: const EdgeInsets.all(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 960,
-          maxHeight: (size.height - 40).clamp(400, 720),
+          maxHeight: (size.height - 28).clamp(400, 760),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
               child: Row(
                 children: [
                   Icon(Icons.closed_caption_rounded, color: scheme.primary),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Preferenze sottotitoli',
@@ -776,13 +783,13 @@ class _SubtitlePreferencesDialogState extends State<SubtitlePreferencesDialog> {
             const Divider(height: 1),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
                 child: body,
               ),
             ),
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Row(
                 children: [
                   TextButton.icon(

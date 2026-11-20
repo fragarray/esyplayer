@@ -577,12 +577,25 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   ) {
     final window = WindowManager.instance.getCurrent();
     final currentSource = controller.currentSource;
-    MenuItemButton item(String label, VoidCallback? onPressed) =>
-        MenuItemButton(
-          style: _menuButtonStyle,
-          onPressed: onPressed,
-          child: Text(label),
-        );
+    MenuItemButton item(
+      String label,
+      VoidCallback? onPressed, {
+      String? shortcut,
+    }) => MenuItemButton(
+      style: _menuButtonStyle,
+      onPressed: onPressed,
+      trailingIcon: shortcut == null
+          ? null
+          : Text(
+              shortcut,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+      child: Text(label),
+    );
     Widget submenu(
       String label,
       List<Widget> children, {
@@ -617,7 +630,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
     return [
       submenu('Apri', [
-        item('File…', () => _openFile(controller)),
+        item('File…', () => _openFile(controller), shortcut: 'Ctrl+F'),
         item('Cartella…', () => _openFolder(controller)),
         item('URL o stream…', () => _openUrl(context, controller)),
         item('Playlist M3U/PLS…', () => _openPlaylist(controller)),
@@ -631,24 +644,49 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         item(
           controller.isPlaying ? 'Pausa' : 'Riproduci',
           controller.playOrPause,
+          shortcut: 'Spazio',
         ),
         item('Stop', controller.stop),
         item('Elemento precedente', controller.previous),
-        item('Elemento successivo', controller.next),
+        item('Elemento successivo', controller.next, shortcut: 'Shift+.'),
         item('Indietro di 10 secondi', () {
           final target = controller.position - const Duration(seconds: 10);
           controller.seek(target.isNegative ? Duration.zero : target);
-        }),
+        }, shortcut: '←'),
         item('Avanti di 10 secondi', () {
           controller.seek(controller.position + const Duration(seconds: 10));
-        }),
+        }, shortcut: '→'),
+        item('Indietro di 1 minuto', () {
+          final target = controller.position - const Duration(minutes: 1);
+          controller.seek(target.isNegative ? Duration.zero : target);
+        }, shortcut: '↓'),
+        item('Avanti di 1 minuto', () {
+          controller.seek(controller.position + const Duration(minutes: 1));
+        }, shortcut: '↑'),
+        item('Indietro di 10 minuti', () {
+          final target = controller.position - const Duration(minutes: 10);
+          controller.seek(target.isNegative ? Duration.zero : target);
+        }, shortcut: 'PgGiù'),
+        item('Avanti di 10 minuti', () {
+          controller.seek(controller.position + const Duration(minutes: 10));
+        }, shortcut: 'PgSu'),
         item(
           'Avanza di un fotogramma',
           () => controller.command(['frame-step']),
+          shortcut: '.',
+        ),
+        item(
+          'Indietro di un fotogramma',
+          () => controller.command(['frame-back-step']),
+          shortcut: ',',
         ),
         submenu('Velocità', [
           for (final rate in [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 4.0])
-            item('$rate×', () => controller.setRate(rate)),
+            item(
+              '$rate×',
+              () => controller.setRate(rate),
+              shortcut: rate == 1 ? 'Backspace' : null,
+            ),
         ]),
         item('Imposta punto A del loop', () {
           final seconds = controller.position.inMilliseconds / 1000;
@@ -667,6 +705,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         item(
           'Schermata',
           () => controller.command(['screenshot', 'subtitles']),
+          shortcut: 'S',
         ),
         item(
           'Capitolo successivo',
@@ -697,8 +736,32 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       ]),
       submenu('Audio', [
         submenu('Traccia audio', _audioTrackItems(controller)),
-        item('Muto / attiva audio', controller.toggleMute),
+        item(
+          'Traccia audio successiva',
+          () => controller.command(['cycle', 'aid']),
+          shortcut: 'K',
+        ),
+        item(
+          'Traccia audio precedente',
+          () => controller.command(['cycle', 'aid', 'down']),
+          shortcut: 'Shift+K',
+        ),
+        item('Muto / attiva audio', controller.toggleMute, shortcut: 'M'),
         submenu('Volume', [
+          item(
+            'Diminuisci volume',
+            () => controller.setVolume(
+              (controller.volume - 5).clamp(0, 200).toDouble(),
+            ),
+            shortcut: '9',
+          ),
+          item(
+            'Aumenta volume',
+            () => controller.setVolume(
+              (controller.volume + 5).clamp(0, 200).toDouble(),
+            ),
+            shortcut: '0',
+          ),
           for (final volume in [50, 100, 150, 200])
             item('$volume%', () => controller.setVolume(volume.toDouble())),
         ]),
@@ -708,6 +771,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         ),
       ]),
       submenu('Sottotitoli', [
+        item(
+          'Traccia sottotitoli successiva',
+          () => controller.command(['cycle', 'sid']),
+          shortcut: 'J',
+        ),
+        item(
+          'Traccia sottotitoli precedente',
+          () => controller.command(['cycle', 'sid', 'down']),
+          shortcut: 'Shift+J',
+        ),
         submenu(
           'Sottotitolo primario',
           _subtitleTrackItems(controller, secondary: false),
@@ -717,6 +790,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           _subtitleTrackItems(controller, secondary: true),
         ),
         item('Carica file esterno…', () => _loadSubtitle(controller)),
+        item(
+          'Ritardo sottotitoli −0,1 s',
+          () => controller.command(['add', 'sub-delay', '-0.1']),
+          shortcut: 'Z',
+        ),
+        item(
+          'Ritardo sottotitoli +0,1 s',
+          () => controller.command(['add', 'sub-delay', '0.1']),
+          shortcut: 'X',
+        ),
         submenu('Dimensione', [
           for (final size in [75, 100, 125, 150, 200])
             item('$size%', () => controller.setSubtitleSize(size)),
@@ -745,11 +828,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       submenu('Playlist', [
         item('Aggiungi file alla coda…', () => _addFileToQueue(controller)),
         item('Apri playlist M3U/PLS…', () => _openPlaylist(controller)),
-        item('Elemento precedente', controller.previous),
-        item('Elemento successivo', controller.next),
+        item('Elemento precedente', controller.previous, shortcut: 'Shift+,'),
+        item('Elemento successivo', controller.next, shortcut: 'Shift+.'),
       ]),
       submenu('Visualizza', [
-        item('Schermata intera', _toggleFullScreen),
+        item('Schermata intera', _toggleFullScreen, shortcut: 'F'),
         item('Sempre in primo piano', () {
           if (window != null) {
             window.isAlwaysOnTop = !window.isAlwaysOnTop;
@@ -999,6 +1082,59 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         SingleActivator(LogicalKeyboardKey.arrowRight): _SeekIntent(
           Duration(seconds: 10),
         ),
+        SingleActivator(LogicalKeyboardKey.arrowDown): _SeekIntent(
+          Duration(minutes: -1),
+        ),
+        SingleActivator(LogicalKeyboardKey.arrowUp): _SeekIntent(
+          Duration(minutes: 1),
+        ),
+        SingleActivator(LogicalKeyboardKey.pageDown): _SeekIntent(
+          Duration(minutes: -10),
+        ),
+        SingleActivator(LogicalKeyboardKey.pageUp): _SeekIntent(
+          Duration(minutes: 10),
+        ),
+        SingleActivator(LogicalKeyboardKey.comma): _PlayerActionIntent(
+          _PlayerAction.frameBackStep,
+        ),
+        SingleActivator(LogicalKeyboardKey.period): _PlayerActionIntent(
+          _PlayerAction.frameStep,
+        ),
+        SingleActivator(LogicalKeyboardKey.comma, shift: true):
+            _PlayerActionIntent(_PlayerAction.previousItem),
+        SingleActivator(LogicalKeyboardKey.period, shift: true):
+            _PlayerActionIntent(_PlayerAction.nextItem),
+        SingleActivator(LogicalKeyboardKey.keyF): _PlayerActionIntent(
+          _PlayerAction.fullscreen,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyS): _PlayerActionIntent(
+          _PlayerAction.screenshot,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyM): _PlayerActionIntent(
+          _PlayerAction.mute,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyK): _PlayerActionIntent(
+          _PlayerAction.nextAudio,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyK, shift: true):
+            _PlayerActionIntent(_PlayerAction.previousAudio),
+        SingleActivator(LogicalKeyboardKey.keyJ): _PlayerActionIntent(
+          _PlayerAction.nextSubtitle,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyJ, shift: true):
+            _PlayerActionIntent(_PlayerAction.previousSubtitle),
+        SingleActivator(LogicalKeyboardKey.digit9): _PlayerActionIntent(
+          _PlayerAction.volumeDown,
+        ),
+        SingleActivator(LogicalKeyboardKey.digit0): _PlayerActionIntent(
+          _PlayerAction.volumeUp,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyZ): _PlayerActionIntent(
+          _PlayerAction.subtitleDelayDown,
+        ),
+        SingleActivator(LogicalKeyboardKey.keyX): _PlayerActionIntent(
+          _PlayerAction.subtitleDelayUp,
+        ),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -1011,6 +1147,47 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               return controller.seek(
                 target.isNegative ? Duration.zero : target,
               );
+            },
+          ),
+          _PlayerActionIntent: CallbackAction<_PlayerActionIntent>(
+            onInvoke: (intent) {
+              switch (intent.action) {
+                case _PlayerAction.fullscreen:
+                  _toggleFullScreen();
+                  return null;
+                case _PlayerAction.screenshot:
+                  return controller.command(['screenshot', 'subtitles']);
+                case _PlayerAction.mute:
+                  return controller.toggleMute();
+                case _PlayerAction.previousItem:
+                  return controller.previous();
+                case _PlayerAction.nextItem:
+                  return controller.next();
+                case _PlayerAction.previousAudio:
+                  return controller.command(['cycle', 'aid', 'down']);
+                case _PlayerAction.nextAudio:
+                  return controller.command(['cycle', 'aid']);
+                case _PlayerAction.previousSubtitle:
+                  return controller.command(['cycle', 'sid', 'down']);
+                case _PlayerAction.nextSubtitle:
+                  return controller.command(['cycle', 'sid']);
+                case _PlayerAction.frameBackStep:
+                  return controller.command(['frame-back-step']);
+                case _PlayerAction.frameStep:
+                  return controller.command(['frame-step']);
+                case _PlayerAction.volumeDown:
+                  return controller.setVolume(
+                    (controller.volume - 5).clamp(0, 200).toDouble(),
+                  );
+                case _PlayerAction.volumeUp:
+                  return controller.setVolume(
+                    (controller.volume + 5).clamp(0, 200).toDouble(),
+                  );
+                case _PlayerAction.subtitleDelayDown:
+                  return controller.command(['add', 'sub-delay', '-0.1']);
+                case _PlayerAction.subtitleDelayUp:
+                  return controller.command(['add', 'sub-delay', '0.1']);
+              }
             },
           ),
         },
@@ -1143,4 +1320,28 @@ class _SeekIntent extends Intent {
   const _SeekIntent(this.offset);
 
   final Duration offset;
+}
+
+enum _PlayerAction {
+  fullscreen,
+  screenshot,
+  mute,
+  previousItem,
+  nextItem,
+  previousAudio,
+  nextAudio,
+  previousSubtitle,
+  nextSubtitle,
+  frameBackStep,
+  frameStep,
+  volumeDown,
+  volumeUp,
+  subtitleDelayDown,
+  subtitleDelayUp,
+}
+
+class _PlayerActionIntent extends Intent {
+  const _PlayerActionIntent(this.action);
+
+  final _PlayerAction action;
 }

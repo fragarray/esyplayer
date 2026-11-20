@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +51,46 @@ void main() {
     await tester.tap(find.text('Opzioni'));
     await tester.pumpAndSettle();
     expect(find.text('Aspetto e lingua'), findsOneWidget);
+
+    await gesture.up();
+  });
+
+  testWidgets('keyboard shortcuts are shown and control the player', (
+    tester,
+  ) async {
+    final backend = FakeBackend();
+    final controller = PlayerController(backend);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [playerControllerProvider.overrideWith((ref) => controller)],
+        child: const MaterialApp(home: PlayerScreen(enableDropTarget: false)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(backend.position, const Duration(seconds: 10));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+    expect(backend.playing, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyM);
+    await tester.pumpAndSettle();
+    expect(backend.properties['mute'], 'yes');
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Nessun media caricato')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Riproduci'));
+    await tester.pumpAndSettle();
+    expect(find.text('Spazio'), findsOneWidget);
+    expect(find.text('←'), findsOneWidget);
 
     await gesture.up();
   });

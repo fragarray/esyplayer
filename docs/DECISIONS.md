@@ -45,6 +45,11 @@
   last entry instead when needed to keep an entry reachable near the bottom
   edge. Anchor fullscreen controls to the full-width bottom edge with only
   their intrinsic height before sliding them away.
-- Set subtitle option values through mpv's `options/<name>` properties,
-  including ASS override and border style; keep the fullscreen toolbar opaque
+- Set subtitle option values through mpv's `options/<name>` properties. Do not
+  send the UI-only `sub-border-style` value directly: the distributed Windows
+  bundle (`media_kit_libs_windows_video` 1.0.11) reports mpv
+  `0.36.0-403-g652a1dd907`, which does not recognize that option, and
+  `media_kit` does not surface the failed native set. Map the choice to ASS
+  `BorderStyle` via `sub-ass-force-style` (mpv 0.36) and
+  `sub-ass-style-overrides` (newer mpv). Keep the fullscreen toolbar opaque
   with a theme-colored border, and pause its hide timer while hovered.

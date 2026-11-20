@@ -61,9 +61,19 @@ void main() {
       expect(backend.properties['options/secondary-sub-pos'], '0');
       expect(backend.properties['options/sub-font'], 'Test Font');
       expect(
-        backend.properties['options/sub-border-style'],
-        'outline-and-shadow',
+        backend.properties.containsKey('options/sub-border-style'),
+        isFalse,
       );
+      expect(
+        backend.properties['options/sub-ass-force-style'],
+        'BorderStyle=1',
+      );
+      expect(
+        backend.properties.containsKey('options/sub-ass-style-overrides'),
+        isFalse,
+      );
+      expect(backend.properties['options/sub-back-color'], '#00000000');
+      expect(backend.properties['options/sub-shadow-color'], '#80000000');
       expect(backend.properties['options/sub-ass-override'], 'force');
       expect(backend.properties.keys.take(2).toList(), [
         'options/sub-ass-override',
@@ -89,7 +99,22 @@ void main() {
         refreshActiveTracks: true,
       );
 
-      expect(backend.properties['options/sub-border-style'], 'opaque-box');
+      expect(
+        backend.properties.containsKey('options/sub-border-style'),
+        isFalse,
+      );
+      expect(
+        backend.properties['options/sub-ass-force-style'],
+        'BorderStyle=3',
+      );
+      expect(
+        backend.properties['options/sub-back-color'],
+        AppSettings.subtitlePreferenceDefaults['sub-back-color'],
+      );
+      expect(
+        backend.properties.containsKey('options/sub-shadow-color'),
+        isFalse,
+      );
       expect(backend.properties['sid'], '2');
       expect(backend.properties['secondary-sid'], '3');
       expect(
@@ -100,6 +125,51 @@ void main() {
           'property:sid',
           'property:secondary-sid',
         ]),
+      );
+      controller.dispose();
+    },
+  );
+
+  test('uses native border-style option when the player exposes it', () async {
+    final backend = _OrderedBackend()
+      ..properties['options/sub-border-style'] = 'outline-and-shadow';
+    final controller = PlayerController(backend);
+    final preferences = Map<String, String>.of(
+      AppSettings.subtitlePreferenceDefaults,
+    )..['sub-border-style'] = 'opaque-box';
+
+    await controller.applySubtitlePreferences(preferences);
+
+    expect(backend.properties['options/sub-border-style'], 'opaque-box');
+    expect(
+      backend.properties.containsKey('options/sub-ass-force-style'),
+      isFalse,
+    );
+    expect(
+      backend.properties['options/sub-back-color'],
+      AppSettings.subtitlePreferenceDefaults['sub-back-color'],
+    );
+    controller.dispose();
+  });
+
+  test(
+    'background-box subtitle border maps to the libass BorderStyle 4',
+    () async {
+      final backend = _OrderedBackend();
+      final controller = PlayerController(backend);
+      final preferences = Map<String, String>.of(
+        AppSettings.subtitlePreferenceDefaults,
+      )..['sub-border-style'] = 'background-box';
+
+      await controller.applySubtitlePreferences(preferences);
+
+      expect(
+        backend.properties['options/sub-ass-force-style'],
+        'BorderStyle=4',
+      );
+      expect(
+        backend.properties.containsKey('options/sub-ass-style-overrides'),
+        isFalse,
       );
       controller.dispose();
     },

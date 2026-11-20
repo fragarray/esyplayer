@@ -21,7 +21,8 @@
 - Persistent subtitle font, size, color, outline, margins, alignment, encoding,
   delay, and primary/secondary positioning preferences
 - Subtitle preference reset action and ASS border-style override, including a
-  migration from the old ASS override default
+  migration from the old ASS override default and an mpv-compatible ASS
+  `BorderStyle` mapping
 - A-B loop property control
 - Native libass subtitle rendering with a single bottom playback toolbar
 - Raw mpv property dialog and command actions

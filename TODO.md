@@ -67,11 +67,12 @@
 - [x] Show up to six recent files in the Open submenu
 - [x] Reset subtitle preferences and force ASS style override when changing
   border style
-- [x] Apply ASS override before border settings and migrate the old default
+- [x] Apply ASS override before ASS border-style mapping and migrate the old default
   for existing subtitle preferences
 - [x] Apply subtitle properties before loading a file so libass initializes
   tracks with the selected style
-- [x] Set subtitle options through mpv's `options/<name>` property namespace
+- [x] Set subtitle options through mpv's `options/<name>` namespace and map
+  border styles through compatible ASS style overrides
 - [x] Toggle fullscreen with video double-click and auto-hide the bottom
   controls after two seconds
 - [x] Keep fullscreen controls at full-width bottom position and intrinsic

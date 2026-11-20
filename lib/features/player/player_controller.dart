@@ -95,6 +95,18 @@ class PlayerController extends ChangeNotifier {
     bool refreshActiveTracks = false,
   }) async {
     const overrideKeys = ['sub-ass-override', 'secondary-sub-ass-override'];
+    const borderStyleValues = {
+      'outline-and-shadow': '1',
+      'opaque-box': '3',
+      'background-box': '4',
+    };
+    final borderStyle = preferences['sub-border-style'];
+    final nativeBorderStyle = await backend.getProperty(
+      'options/sub-border-style',
+    );
+    final supportsNativeBorderStyle = nativeBorderStyle.isNotEmpty;
+    final legacyOutlineAndShadow =
+        !supportsNativeBorderStyle && borderStyle == 'outline-and-shadow';
     for (final key in overrideKeys) {
       final value = preferences[key];
       if (value != null) {
@@ -102,9 +114,27 @@ class PlayerController extends ChangeNotifier {
       }
     }
     for (final entry in preferences.entries) {
-      if (!overrideKeys.contains(entry.key)) {
-        await backend.setProperty('options/${entry.key}', entry.value);
+      if (!overrideKeys.contains(entry.key) &&
+          entry.key != 'sub-border-style') {
+        if (legacyOutlineAndShadow && entry.key == 'sub-back-color') {
+          await backend.setProperty('options/sub-back-color', '#00000000');
+          await backend.setProperty('options/sub-shadow-color', entry.value);
+        } else {
+          await backend.setProperty('options/${entry.key}', entry.value);
+        }
       }
+    }
+    if (supportsNativeBorderStyle && borderStyle != null) {
+      await backend.setProperty('options/sub-border-style', borderStyle);
+    } else if (borderStyle != null) {
+      final assBorderStyle = borderStyleValues[borderStyle];
+      if (assBorderStyle == null) {
+        return;
+      }
+      await backend.setProperty(
+        'options/sub-ass-force-style',
+        'BorderStyle=$assBorderStyle',
+      );
     }
     if (refreshActiveTracks) {
       await _refreshActiveSubtitleTracks();
