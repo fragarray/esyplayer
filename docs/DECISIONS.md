@@ -39,3 +39,9 @@
   `AppSettings` defaults.
 - Fullscreen can be toggled by double-clicking active video. Its bottom
   controls slide out after two seconds and return when the pointer moves.
+- Apply persisted subtitle properties before loading media so libass has the
+  selected border and ASS override when it initializes the subtitle track.
+- Position nested menus from the pointer's local row coordinate, selecting the
+  last entry instead when needed to keep an entry reachable near the bottom
+  edge. Anchor fullscreen controls to the full-width bottom edge with only
+  their intrinsic height before sliding them away.

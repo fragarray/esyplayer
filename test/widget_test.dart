@@ -103,19 +103,19 @@ void main() {
     final triggerItem = tester.getRect(
       find.ancestor(
         of: find.text('Video'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     final openItem = tester.getRect(
       find.ancestor(
         of: find.text('Apri'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     final optionsItem = tester.getRect(
       find.ancestor(
         of: find.text('Opzioni'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     final mainMenu = Rect.fromLTRB(
@@ -124,7 +124,8 @@ void main() {
       openItem.right,
       optionsItem.bottom,
     );
-    await tester.tap(find.text('Video'));
+    final clickY = triggerItem.top + 8;
+    await tester.tapAt(Offset(triggerItem.center.dx, clickY));
     await tester.pumpAndSettle();
 
     final firstItem = tester.getRect(
@@ -139,11 +140,8 @@ void main() {
         matching: find.byType(MenuItemButton),
       ),
     );
-    expect(
-      firstItem.top <= triggerItem.center.dy &&
-          triggerItem.center.dy <= firstItem.bottom,
-      isTrue,
-    );
+    expect(firstItem.top <= clickY && clickY <= firstItem.bottom, isTrue);
+    expect((firstItem.center.dy - clickY).abs(), lessThan(1));
     expect(triggerItem.center.dy, lessThanOrEqualTo(lastItem.bottom));
     expect(
       firstItem.left >= mainMenu.right || lastItem.right <= mainMenu.left,
@@ -184,19 +182,19 @@ void main() {
     final openItem = tester.getRect(
       find.ancestor(
         of: find.text('Apri'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     final optionsItem = tester.getRect(
       find.ancestor(
         of: find.text('Opzioni'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     final videoItem = tester.getRect(
       find.ancestor(
         of: find.text('Video'),
-        matching: find.byType(SubmenuButton),
+        matching: find.byType(MenuItemButton),
       ),
     );
     await tester.tap(find.text('Video'));

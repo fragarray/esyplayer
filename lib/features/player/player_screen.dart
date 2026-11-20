@@ -18,6 +18,25 @@ import 'player_providers.dart';
 import '../../core/settings/settings_providers.dart';
 import '../subtitles/subtitle_preferences_dialog.dart';
 
+const _menuButtonStyle = ButtonStyle(
+  minimumSize: WidgetStatePropertyAll(Size(0, 38)),
+  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  visualDensity: VisualDensity.standard,
+);
+const _rootMenuStyle = MenuStyle(
+  padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
+  visualDensity: VisualDensity.compact,
+);
+const _submenuMenuStyle = MenuStyle(
+  alignment: AlignmentDirectional.centerEnd,
+  padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
+  visualDensity: VisualDensity.compact,
+);
+const _menuRowHeight = 38.0;
+const _menuSurfacePadding = 4.0;
+const _submenuGap = 8.0;
+
 class PlayerScreen extends ConsumerStatefulWidget {
   const PlayerScreen({super.key, this.enableDropTarget = true});
 
@@ -28,23 +47,6 @@ class PlayerScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayerScreenState extends ConsumerState<PlayerScreen> {
-  static const _menuButtonStyle = ButtonStyle(
-    minimumSize: WidgetStatePropertyAll(Size(0, 38)),
-    padding: WidgetStatePropertyAll(
-      EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    ),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-  );
-  static const _rootMenuStyle = MenuStyle(
-    padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
-    visualDensity: VisualDensity.compact,
-  );
-  static const _submenuMenuStyle = MenuStyle(
-    alignment: AlignmentDirectional.centerEnd,
-    padding: WidgetStatePropertyAll(EdgeInsets.all(4)),
-    visualDensity: VisualDensity.compact,
-  );
-
   final List<String> _recentFilePaths = [];
   Timer? _controlsTimer;
   nativeapi.Window? _window;
@@ -556,17 +558,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           onPressed: onPressed,
           child: Text(label),
         );
-    SubmenuButton submenu(
+    Widget submenu(
       String label,
       List<Widget> children, {
       VoidCallback? onOpen,
-    }) => SubmenuButton(
+    }) => _PositionedSubmenu(
+      label: label,
       menuChildren: children,
-      style: _menuButtonStyle,
-      menuStyle: _submenuMenuStyle,
-      alignmentOffset: const Offset(0, -19),
       onOpen: onOpen,
-      child: Text(label),
     );
 
     final recentFileItems = _recentFilesLoading
@@ -928,8 +927,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             fit: StackFit.expand,
             children: [
               videoSurface,
-              Align(
-                alignment: Alignment.bottomCenter,
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
                 child: ClipRect(
                   child: AnimatedSlide(
                     offset: _controlsVisible
@@ -1008,6 +1009,94 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     )
                   : playerBody,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PositionedSubmenu extends StatefulWidget {
+  const _PositionedSubmenu({
+    required this.label,
+    required this.menuChildren,
+    this.onOpen,
+  });
+
+  final String label;
+  final List<Widget> menuChildren;
+  final VoidCallback? onOpen;
+
+  @override
+  State<_PositionedSubmenu> createState() => _PositionedSubmenuState();
+}
+
+class _PositionedSubmenuState extends State<_PositionedSubmenu> {
+  final _triggerKey = GlobalKey();
+  Offset? _pointerPosition;
+
+  void _open(MenuController controller, Offset localPosition) {
+    if (controller.isOpen) {
+      return;
+    }
+
+    final renderObject = _triggerKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) {
+      return;
+    }
+
+    final mediaQuery = MediaQuery.of(context);
+    final clickY = renderObject.localToGlobal(localPosition).dy;
+    final menuHeight =
+        widget.menuChildren.length * _menuRowHeight + 2 * _menuSurfacePadding;
+    final safeBottom =
+        mediaQuery.size.height -
+        mediaQuery.padding.bottom -
+        mediaQuery.viewInsets.bottom;
+    final opensFromLastItem =
+        clickY + menuHeight - _menuSurfacePadding - _menuRowHeight / 2 >
+        safeBottom;
+    final itemIndex = opensFromLastItem && widget.menuChildren.isNotEmpty
+        ? widget.menuChildren.length - 1
+        : 0;
+    final menuTop =
+        localPosition.dy -
+        _menuSurfacePadding -
+        _menuRowHeight / 2 -
+        itemIndex * _menuRowHeight;
+
+    controller.open(
+      position: Offset(renderObject.size.width + _submenuGap, menuTop),
+    );
+  }
+
+  Offset _centerPosition() {
+    final size = _triggerKey.currentContext?.size;
+    return Offset(0, (size?.height ?? _menuRowHeight) / 2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuAnchor(
+      menuChildren: widget.menuChildren,
+      style: _submenuMenuStyle,
+      alignmentOffset: const Offset(_submenuGap, 0),
+      onOpen: widget.onOpen,
+      builder: (context, controller, child) => Listener(
+        onPointerDown: (event) => _pointerPosition = event.localPosition,
+        child: MouseRegion(
+          onHover: (event) {
+            _pointerPosition = event.localPosition;
+            _open(controller, event.localPosition);
+          },
+          child: MenuItemButton(
+            key: _triggerKey,
+            closeOnActivate: false,
+            style: _menuButtonStyle,
+            onPressed: () =>
+                _open(controller, _pointerPosition ?? _centerPosition()),
+            trailingIcon: const Icon(Icons.chevron_right, size: 18),
+            child: Text(widget.label),
           ),
         ),
       ),

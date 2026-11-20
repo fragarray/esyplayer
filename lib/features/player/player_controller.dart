@@ -56,8 +56,8 @@ class PlayerController extends ChangeNotifier {
     final subtitlePreferences =
         await settings?.getSubtitlePreferences() ??
         AppSettings.subtitlePreferenceDefaults;
-    await backend.open(source);
     await applySubtitlePreferences(subtitlePreferences);
+    await backend.open(source);
     final resume = await database?.resumePosition(source);
     if (resume != null && resume > Duration.zero) {
       await backend.seek(resume);

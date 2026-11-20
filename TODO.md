@@ -69,10 +69,14 @@
   border style
 - [x] Apply ASS override before border settings and migrate the old default
   for existing subtitle preferences
+- [x] Apply subtitle properties before loading a file so libass initializes
+  tracks with the selected style
 - [x] Toggle fullscreen with video double-click and auto-hide the bottom
   controls after two seconds
+- [x] Keep fullscreen controls at full-width bottom position and intrinsic
+  toolbar height while they are visible
 - [x] Open compact submenus beside their parent, flip within window bounds, and
-  align an entry with the trigger click
+  align an entry with the trigger click's vertical coordinate
 - [x] Stats overlay
 - [x] Media info dialog
 - [x] Raw mpv command palette
